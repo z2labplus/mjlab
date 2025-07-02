@@ -55,6 +55,9 @@ interface WebSocketGameStore {
   setAvailableTiles: (tiles: TileInfo[]) => void;
   setIsLoading: (loading: boolean) => void;
   
+  // Actions - 智能分析
+  triggerAutoAnalysis: () => Promise<void>;
+  
   // Actions - 游戏操作（通过WebSocket）
   addTileToHand: (playerId: number, tile: Tile) => Promise<void>;
   discardTile: (playerId: number, tile: Tile) => Promise<void>;
@@ -263,23 +266,49 @@ export const useWebSocketGameStore = create<WebSocketGameStore>()(
     
     syncGameStateFromAPI: async () => {
       try {
+        // 获取当前状态用于比较
+        const currentState = get().gameState;
+        const previousPlayer0TileCount = currentState.player_hands['0']?.tiles?.length || 0;
+        
         // 通过HTTP API获取游戏状态
         const response = await fetch('http://localhost:8000/api/mahjong/game-state');
         const result = await response.json();
         
         if (result.success && result.game_state) {
+          const newState = result.game_state;
+          const newPlayer0TileCount = newState.player_hands['0']?.tiles?.length || 0;
+          
+          // 🎯 检测玩家0是否摸牌（手牌数量增加）
+          const player0DrewTile = newPlayer0TileCount > previousPlayer0TileCount;
+          
           set({ 
-            gameState: result.game_state,
+            gameState: newState,
             lastSyncTime: new Date()
           });
+          
           console.log('🔄🔄🔄 从API同步游戏状态成功 🔄🔄🔄');
           console.log('📊📊📊 同步后的状态 📊📊📊', {
-            show_all_hands: result.game_state.show_all_hands,
-            game_ended: result.game_state.game_ended,
-            player1_tiles: result.game_state.player_hands?.['1']?.tiles?.length || 'null',
-            player2_tiles: result.game_state.player_hands?.['2']?.tiles?.length || 'null',
-            player3_tiles: result.game_state.player_hands?.['3']?.tiles?.length || 'null'
+            show_all_hands: newState.show_all_hands,
+            game_ended: newState.game_ended,
+            player0_previous_tiles: previousPlayer0TileCount,
+            player0_current_tiles: newPlayer0TileCount,
+            player0_drew_tile: player0DrewTile,
+            player1_tiles: newState.player_hands?.['1']?.tiles?.length || 'null',
+            player2_tiles: newState.player_hands?.['2']?.tiles?.length || 'null',
+            player3_tiles: newState.player_hands?.['3']?.tiles?.length || 'null'
           });
+          
+          // 🔧 关键修复：玩家0摸牌后自动分析
+          if (player0DrewTile && !newState.game_ended) {
+            console.log('🎯 检测到玩家0摸牌，自动开始分析...');
+            // 延迟一点点执行，确保状态已更新
+            setTimeout(() => {
+              get().triggerAutoAnalysis();
+            }, 100);
+          } else {
+            // 其他玩家操作时，保持现有的分析结果不变
+            console.log('📊 其他玩家操作，保持当前分析结果');
+          }
         } else {
           console.warn('⚠️ API返回状态异常:', result);
         }
@@ -702,6 +731,94 @@ export const useWebSocketGameStore = create<WebSocketGameStore>()(
       });
       
       return winners;
+    },
+    
+    // 🔧 智能分析自动触发
+    triggerAutoAnalysis: async () => {
+      const { gameState, isAnalyzing, setIsAnalyzing, setAnalysisResult } = get();
+      
+      // 避免重复分析
+      if (isAnalyzing) {
+        console.log('⚠️ 分析正在进行中，跳过自动分析');
+        return;
+      }
+      
+      const myHand = gameState.player_hands['0'];
+      if (!myHand || !myHand.tiles || myHand.tiles.length === 0) {
+        console.log('⚠️ 玩家0手牌为空，跳过自动分析');
+        return;
+      }
+      
+      // 🎯 游戏结束时不分析
+      if (gameState.game_ended) {
+        console.log('🏁 游戏已结束，跳过自动分析');
+        return;
+      }
+      
+      setIsAnalyzing(true);
+      
+      try {
+        // 准备分析请求数据
+        const handTiles = myHand.tiles.map(tile => `${tile.value}${tile.type === 'wan' ? '万' : tile.type === 'tiao' ? '条' : '筒'}`);
+        
+        // 收集可见牌（弃牌等）
+        const visibleTiles: string[] = [];
+        if (gameState.discarded_tiles) {
+          gameState.discarded_tiles.forEach(tile => {
+            visibleTiles.push(`${tile.value}${tile.type === 'wan' ? '万' : tile.type === 'tiao' ? '条' : '筒'}`);
+          });
+        }
+        
+        // 获取定缺信息
+        const missingSuit = myHand.missing_suit || gameState.player_hands['0']?.missing_suit || 'tong';
+        const missingSuitChinese = missingSuit === 'wan' ? '万' : missingSuit === 'tiao' ? '条' : '筒';
+        
+        // 调用血战到底分析API
+        const response = await MahjongAPI.analyzeUltimate({
+          hand_tiles: handTiles,
+          visible_tiles: visibleTiles,
+          missing_suit: missingSuitChinese
+        });
+        
+        if (response.success && response.results) {
+          // 构建弃牌分数对象
+          const discardScores: { [key: string]: number } = {};
+          response.results.forEach(result => {
+            discardScores[result.discard_tile] = result.expected_value;
+          });
+
+          // 转换推荐弃牌为Tile类型
+          const recommendedDiscard = response.results[0] ? {
+            type: response.results[0].discard_tile.includes('万') ? TileType.WAN : 
+                  response.results[0].discard_tile.includes('条') ? TileType.TIAO : TileType.TONG,
+            value: parseInt(response.results[0].discard_tile[0])
+          } : undefined;
+
+          // 转换为原有格式以保持兼容性
+          const compatibleAnalysis: AnalysisResult = {
+            win_probability: response.results[0]?.can_win ? 0.8 : 0.2,
+            recommended_discard: recommendedDiscard,
+            listen_tiles: [],
+            suggestions: [
+              `推荐打出：${response.results[0]?.discard_tile}（收益：${response.results[0]?.expected_value}）`,
+              `进张：${response.results[0]?.jinzhang_types}种-${response.results[0]?.jinzhang_count}张`,
+              response.results[0]?.jinzhang_detail || ''
+            ],
+            discard_scores: discardScores,
+            remaining_tiles_count: {},
+            ultimate_results: response.results
+          };
+          
+          setAnalysisResult(compatibleAnalysis);
+          console.log('✅ 自动分析完成:', compatibleAnalysis.suggestions[0]);
+        } else {
+          console.warn('⚠️ 自动分析失败:', response.message || '未知错误');
+        }
+      } catch (error: any) {
+        console.error('❌ 自动分析异常:', error.message);
+      } finally {
+        setIsAnalyzing(false);
+      }
     }
   }))
 );

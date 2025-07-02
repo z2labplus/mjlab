@@ -15,3 +15,5 @@ build/             # 构建目录
 Redis-x64-3.2.100/
 *.mkv
 **/node_modules/
+__pycache__/
+*.pyc

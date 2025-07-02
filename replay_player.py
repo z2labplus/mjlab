@@ -299,7 +299,18 @@ class ReplayPlayer:
                         "type": win_tile_type,
                         "value": win_tile_value
                     }
-                    print(f"✅ 玩家{player_id}自摸胜利状态已设置: {win_tile_str}")
+                    
+                    # 🔧 关键修复：将自摸的胜利牌加入手牌
+                    win_tile_obj = {
+                        "type": win_tile_type,
+                        "value": win_tile_value,
+                        "id": None
+                    }
+                    current_tiles = player_hand.get('tiles', [])
+                    current_tiles.append(win_tile_obj)
+                    player_hand['tiles'] = current_tiles
+                    player_hand['tile_count'] = len(current_tiles)
+                    print(f"✅ 玩家{player_id}自摸胜利状态已设置: {win_tile_str}, 胜利牌已加入手牌")
                 
                 # 处理点炮胜利状态
                 elif 'pao_tile' in final_hand_data:
@@ -315,7 +326,36 @@ class ReplayPlayer:
                         "value": win_tile_value
                     }
                     player_hand['dianpao_player_id'] = dianpao_player
-                    print(f"✅ 玩家{player_id}点炮胜利状态已设置: {win_tile_str} (点炮者: 玩家{dianpao_player})")
+                    
+                    # 🔧 关键修复：将点炮的胜利牌加入手牌
+                    win_tile_obj = {
+                        "type": win_tile_type,
+                        "value": win_tile_value,
+                        "id": None
+                    }
+                    current_tiles = player_hand.get('tiles', [])
+                    current_tiles.append(win_tile_obj)
+                    player_hand['tiles'] = current_tiles
+                    player_hand['tile_count'] = len(current_tiles)
+                    
+                    # 🔧 从点炮者的弃牌中移除被胡的牌
+                    dianpao_player_str = str(dianpao_player)
+                    if 'player_discarded_tiles' in game_state and dianpao_player_str in game_state['player_discarded_tiles']:
+                        discarded_tiles = game_state['player_discarded_tiles'][dianpao_player_str]
+                        # 从后往前找，移除最后一张相同的牌
+                        for i in range(len(discarded_tiles) - 1, -1, -1):
+                            tile = discarded_tiles[i]
+                            if tile and tile.get('type') == win_tile_type and tile.get('value') == win_tile_value:
+                                discarded_tiles.pop(i)
+                                print(f"🎯 从玩家{dianpao_player}弃牌中移除被胡的 {win_tile_str}")
+                                break
+                    
+                    print(f"✅ 玩家{player_id}点炮胜利状态已设置: {win_tile_str} (点炮者: 玩家{dianpao_player}), 胜利牌已加入手牌")
+            
+            # 🔧 关键修复：设置游戏结束标志，确保前端显示所有玩家手牌
+            game_state['game_ended'] = True
+            game_state['show_all_hands'] = True
+            print("🎯 设置游戏结束标志: game_ended=True, show_all_hands=True")
             
             # 一次性更新完整游戏状态（包含手牌+碰杠牌+胜利状态）
             update_response = self.session.post(

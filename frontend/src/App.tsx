@@ -43,9 +43,7 @@ function App() {
   // 胜利通知显示状态
   const [showWinNotification, setShowWinNotification] = useState(false);
   const [playerWinMessage, setPlayerWinMessage] = useState<any>(null);
-  const [lastWinnerCheck, setLastWinnerCheck] = useState<string>('');
-  const [displayedWinnerIndex, setDisplayedWinnerIndex] = useState<number>(0);
-  const [notificationShown, setNotificationShown] = useState<boolean>(false);
+  const [shownWinners, setShownWinners] = useState<Set<string>>(new Set()); // 已显示过的胜利者集合
 
   useEffect(() => {
     // 只在实时游戏模式下初始化WebSocket连接
@@ -93,35 +91,19 @@ function App() {
         const winners = checkForWinners();
         
         if (winners.length > 0) {
-          // 生成所有胜利者的标识字符串
-          const allWinnerIds = winners.map(w => `${w.player_id}-${w.win_type}`).join(',');
-          
-          // 如果胜利者列表发生变化，重置显示索引和通知状态
-          if (allWinnerIds !== lastWinnerCheck) {
-            setDisplayedWinnerIndex(0);
-            setLastWinnerCheck(allWinnerIds);
-            setNotificationShown(false); // 重置通知状态，允许显示新的通知
-            console.log('🏆 检测到胜利者变化，重置显示:', winners);
-          }
-          
-          // 只有在通知还未显示时才设置胜利者消息（避免重复触发计时器）
-          if (!notificationShown) {
-            const currentWinnerIndex = displayedWinnerIndex % winners.length;
-            const currentWinner = winners[currentWinnerIndex];
+          // 🔧 关键修复：检查是否有新的胜利者需要显示
+          for (const winner of winners) {
+            // 生成唯一的胜利者标识（包含胜利牌信息确保唯一性）
+            const winnerId = `${winner.player_id}-${winner.win_type}-${winner.win_tile ? `${winner.win_tile.value}${winner.win_tile.type}` : 'unknown'}`;
             
-            setPlayerWinMessage(currentWinner);
-            setNotificationShown(true); // 标记通知已显示
-            console.log(`🏆 显示胜利者 ${currentWinnerIndex + 1}/${winners.length}:`, currentWinner);
-            console.log(`🏆 胜利详情: 玩家${currentWinner.player_id} ${currentWinner.win_type === 'zimo' ? '自摸' : '点炮胡牌'} ${currentWinner.win_tile ? `${currentWinner.win_tile.value}${suitNames[currentWinner.win_tile.type as keyof typeof suitNames]}` : ''}`);
-          }
-        } else {
-          // 如果没有胜利者了，清除状态
-          if (lastWinnerCheck !== '') {
-            setLastWinnerCheck('');
-            setDisplayedWinnerIndex(0);
-            setPlayerWinMessage(null);
-            setNotificationShown(false);
-            console.log('🏆 胜利者状态已清除');
+            // 如果这个胜利者还没有显示过通知
+            if (!shownWinners.has(winnerId)) {
+              setPlayerWinMessage(winner);
+              setShownWinners(prev => new Set(prev).add(winnerId)); // 标记为已显示
+              console.log('🏆 显示新胜利者通知:', winner);
+              console.log(`🏆 胜利详情: 玩家${winner.player_id} ${winner.win_type === 'zimo' ? '自摸' : '点炮胡牌'} ${winner.win_tile ? `${winner.win_tile.value}${suitNames[winner.win_tile.type as keyof typeof suitNames]}` : ''}`);
+              break; // 一次只显示一个胜利者
+            }
           }
         }
       } catch (error) {
@@ -133,7 +115,7 @@ function App() {
     const interval = setInterval(syncAndCheckState, 1000);
     
     return () => clearInterval(interval);
-  }, [currentMode, checkForWinners, lastWinnerCheck]);
+  }, [currentMode, checkForWinners, shownWinners]);
 
   // 处理玩家胜利消息
   useEffect(() => {
@@ -141,11 +123,10 @@ function App() {
       setShowWinNotification(true);
       console.log('🏆 显示胜利通知:', playerWinMessage);
       
-      // 5秒后自动隐藏通知
+      // 🔧 5秒后自动隐藏通知（保留功能）
       const timer = setTimeout(() => {
         setShowWinNotification(false);
         setPlayerWinMessage(null);
-        setNotificationShown(false); // 重置通知状态，允许下次显示
         console.log('🏆 胜利通知已自动隐藏');
       }, 5000);
       
@@ -153,20 +134,22 @@ function App() {
     }
   }, [playerWinMessage]);
 
-  // 手动关闭胜利通知
+  // 🔧 手动关闭胜利通知（保留功能）
   const handleCloseWinNotification = () => {
     setShowWinNotification(false);
     setPlayerWinMessage(null);
-    setNotificationShown(false); // 重置通知状态，允许下次显示
+    console.log('🏆 胜利通知已手动关闭');
   };
 
-  // 切换到下一个胜利者
-  const handleNextWinner = () => {
+  // 🔧 游戏重置时清空已显示胜利者记录
+  useEffect(() => {
     const winners = checkForWinners();
-    if (winners.length > 1) {
-      setDisplayedWinnerIndex((prev) => (prev + 1) % winners.length);
+    // 如果没有胜利者了，清空已显示记录（游戏可能重置了）
+    if (winners.length === 0 && shownWinners.size > 0) {
+      setShownWinners(new Set());
+      console.log('🏆 游戏重置，清空胜利者显示记录');
     }
-  };
+  }, [checkForWinners, shownWinners]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col">

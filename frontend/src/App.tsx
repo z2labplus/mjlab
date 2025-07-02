@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameBoard from './components/GameBoard';
 import AnalysisPanel from './components/AnalysisPanel';
@@ -44,6 +44,19 @@ function App() {
   const [showWinNotification, setShowWinNotification] = useState(false);
   const [playerWinMessage, setPlayerWinMessage] = useState<any>(null);
   const [shownWinners, setShownWinners] = useState<Set<string>>(new Set()); // 已显示过的胜利者集合
+  
+  // 🔧 使用ref存储最新状态，避免闭包问题
+  const shownWinnersRef = useRef(shownWinners);
+  const checkForWinnersRef = useRef(checkForWinners);
+  
+  // 保持ref同步
+  useEffect(() => {
+    shownWinnersRef.current = shownWinners;
+  }, [shownWinners]);
+  
+  useEffect(() => {
+    checkForWinnersRef.current = checkForWinners;
+  }, [checkForWinners]);
 
   useEffect(() => {
     // 只在实时游戏模式下初始化WebSocket连接
@@ -87,8 +100,12 @@ function App() {
         // 定期从API同步游戏状态
         await syncGameStateFromAPI();
         
-        // 检查胜利者
-        const winners = checkForWinners();
+        // 检查胜利者 - 使用ref获取最新状态
+        const winners = checkForWinnersRef.current();
+        const currentShownWinners = shownWinnersRef.current;
+        
+        console.log('🔍 检测胜利者:', winners.length > 0 ? winners : '无胜利者');
+        console.log('🔍 已显示胜利者记录:', Array.from(currentShownWinners));
         
         if (winners.length > 0) {
           // 🔧 关键修复：检查是否有新的胜利者需要显示
@@ -96,13 +113,18 @@ function App() {
             // 生成唯一的胜利者标识（包含胜利牌信息确保唯一性）
             const winnerId = `${winner.player_id}-${winner.win_type}-${winner.win_tile ? `${winner.win_tile.value}${winner.win_tile.type}` : 'unknown'}`;
             
+            console.log(`🔍 检查胜利者ID: ${winnerId}, 已显示: ${currentShownWinners.has(winnerId)}`);
+            
             // 如果这个胜利者还没有显示过通知
-            if (!shownWinners.has(winnerId)) {
+            if (!currentShownWinners.has(winnerId)) {
               setPlayerWinMessage(winner);
               setShownWinners(prev => new Set(prev).add(winnerId)); // 标记为已显示
               console.log('🏆 显示新胜利者通知:', winner);
               console.log(`🏆 胜利详情: 玩家${winner.player_id} ${winner.win_type === 'zimo' ? '自摸' : '点炮胡牌'} ${winner.win_tile ? `${winner.win_tile.value}${suitNames[winner.win_tile.type as keyof typeof suitNames]}` : ''}`);
+              console.log('🏆 更新后的已显示记录:', Array.from(new Set(currentShownWinners).add(winnerId)));
               break; // 一次只显示一个胜利者
+            } else {
+              console.log(`⏭️ 跳过已显示的胜利者: ${winnerId}`);
             }
           }
         }
@@ -115,27 +137,36 @@ function App() {
     const interval = setInterval(syncAndCheckState, 1000);
     
     return () => clearInterval(interval);
-  }, [currentMode, checkForWinners, shownWinners]);
+  }, [currentMode]); // 🔧 只依赖currentMode，避免重复创建定时器
 
   // 处理玩家胜利消息
   useEffect(() => {
     if (playerWinMessage) {
+      console.log('📢 准备显示胜利通知:', playerWinMessage);
+      console.log('📢 showWinNotification 状态:', showWinNotification);
       setShowWinNotification(true);
-      console.log('🏆 显示胜利通知:', playerWinMessage);
+      console.log('🏆 胜利通知已设置为显示');
       
       // 🔧 5秒后自动隐藏通知（保留功能）
       const timer = setTimeout(() => {
+        console.log('⏰ 5秒计时器触发，隐藏胜利通知');
         setShowWinNotification(false);
         setPlayerWinMessage(null);
         console.log('🏆 胜利通知已自动隐藏');
       }, 5000);
       
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('🔄 清理胜利通知计时器');
+        clearTimeout(timer);
+      };
+    } else {
+      console.log('📢 playerWinMessage 为空，不显示通知');
     }
   }, [playerWinMessage]);
 
   // 🔧 手动关闭胜利通知（保留功能）
   const handleCloseWinNotification = () => {
+    console.log('✋ 用户点击关闭按钮');
     setShowWinNotification(false);
     setPlayerWinMessage(null);
     console.log('🏆 胜利通知已手动关闭');

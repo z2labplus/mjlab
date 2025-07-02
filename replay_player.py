@@ -347,19 +347,37 @@ class ReplayPlayer:
                         
                         # 🔧 从点炮者的弃牌中移除被胡的牌
                         dianpao_player_str = str(dianpao_player)
+                        removed_from_player = False
+                        removed_from_global = False
+                        
+                        # 1. 从player_discarded_tiles中移除
                         if 'player_discarded_tiles' in game_state and dianpao_player_str in game_state['player_discarded_tiles']:
                             discarded_tiles = game_state['player_discarded_tiles'][dianpao_player_str]
-                            removed = False
                             # 从后往前找，移除最后一张相同的牌
                             for i in range(len(discarded_tiles) - 1, -1, -1):
                                 tile = discarded_tiles[i]
                                 if tile and tile.get('type') == win_tile_type and tile.get('value') == win_tile_value:
                                     discarded_tiles.pop(i)
-                                    print(f"🎯 从玩家{dianpao_player}弃牌中移除被胡的 {win_tile_str}")
-                                    removed = True
+                                    print(f"🎯 从玩家{dianpao_player}个人弃牌中移除被胡的 {win_tile_str}")
+                                    removed_from_player = True
                                     break
-                            if not removed:
-                                print(f"⚠️ 警告：未在玩家{dianpao_player}弃牌中找到 {win_tile_str}")
+                        
+                        # 2. 🔧 关键修复：同时从全局discarded_tiles中移除
+                        if 'discarded_tiles' in game_state:
+                            global_discarded = game_state['discarded_tiles']
+                            # 从后往前找，移除最后一张相同的牌
+                            for i in range(len(global_discarded) - 1, -1, -1):
+                                tile = global_discarded[i]
+                                if tile and tile.get('type') == win_tile_type and tile.get('value') == win_tile_value:
+                                    global_discarded.pop(i)
+                                    print(f"🌍 从全局弃牌中移除被胡的 {win_tile_str}")
+                                    removed_from_global = True
+                                    break
+                        
+                        if not removed_from_player:
+                            print(f"⚠️ 警告：未在玩家{dianpao_player}个人弃牌中找到 {win_tile_str}")
+                        if not removed_from_global:
+                            print(f"⚠️ 警告：未在全局弃牌中找到 {win_tile_str}")
                     else:
                         print(f"❌ 错误：玩家{player_id}的手牌为空，无法添加胡牌")
             
@@ -391,9 +409,17 @@ class ReplayPlayer:
                 if pid in game_state.get('player_discarded_tiles', {}):
                     discards = game_state['player_discarded_tiles'][pid]
                     if pid == '0':  # 特别关注玩家0的弃牌（应该缺少6万）
-                        print(f"玩家{pid}弃牌: {len(discards)}张")
+                        print(f"玩家{pid}个人弃牌: {len(discards)}张")
                         discard_strs = [f"{d.get('value')}{d.get('type')}" for d in discards if d]
-                        print(f"  弃牌详情: {discard_strs}")
+                        print(f"  个人弃牌详情: {discard_strs}")
+            
+            # 检查全局弃牌（关键用于计算剩余牌数）
+            global_discards = game_state.get('discarded_tiles', [])
+            print(f"🌍 全局弃牌总数: {len(global_discards)}张")
+            global_discard_strs = [f"{d.get('value')}{d.get('type')}" for d in global_discards if d]
+            wan6_count = sum(1 for d in global_discards if d and d.get('type') == 'wan' and d.get('value') == 6)
+            print(f"  全局弃牌中6万数量: {wan6_count}张")
+            print(f"  全局弃牌详情: {global_discard_strs}")
             print("="*80 + "\n")
             
             # 一次性更新完整游戏状态（包含手牌+碰杠牌+胜利状态）

@@ -283,31 +283,47 @@ class ReplayPlayer:
                     
                     print(f"✅ 玩家{player_id}完整状态设置: {len(tiles)}张手牌, {len(converted_melds)}个碰杠牌组")
             
-            # 3. 在游戏状态中直接设置胜利状态（避免被 set-game-state 覆盖）
+            # 3. 🔧 关键修复：处理胜利牌，在手牌设置完成后立即添加胜利牌
             for player_id_str, final_hand_data in final_hands.items():
                 player_id = int(player_id_str)
                 player_hand = game_state['player_hands'][player_id_str]
                 
-                # 处理自摸胜利状态
+                # 处理自摸胜利状态 - 玩家3自摸3万
                 if 'self_win_tile' in final_hand_data:
                     win_tile_str = final_hand_data['self_win_tile'].get('tile')
                     win_tile_type, win_tile_value = self._parse_tile(win_tile_str)
                     
+                    # 设置胜利状态
                     player_hand['is_winner'] = True
                     player_hand['win_type'] = 'zimo'
                     player_hand['win_tile'] = {
                         "type": win_tile_type,
                         "value": win_tile_value
                     }
-                    print(f"✅ 玩家{player_id}自摸胜利状态已设置: {win_tile_str}")
+                    
+                    # 🎯 关键：将自摸的胜利牌添加到已设置的手牌中
+                    win_tile_obj = {
+                        "type": win_tile_type,
+                        "value": win_tile_value,
+                        "id": None
+                    }
+                    
+                    # 确保tiles已经被设置（应该有13张牌）
+                    if 'tiles' in player_hand and player_hand['tiles']:
+                        player_hand['tiles'].append(win_tile_obj)
+                        player_hand['tile_count'] = len(player_hand['tiles'])
+                        print(f"🎉 玩家{player_id}自摸胜利: 手牌{len(player_hand['tiles'])-1}张 + 自摸{win_tile_str} = 总共{len(player_hand['tiles'])}张")
+                    else:
+                        print(f"❌ 错误：玩家{player_id}的手牌为空，无法添加自摸牌")
                 
-                # 处理点炮胜利状态
+                # 处理点炮胜利状态 - 玩家2胡玩家0的6万
                 elif 'pao_tile' in final_hand_data:
                     pao_data = final_hand_data['pao_tile']
                     win_tile_str = pao_data.get('tile')
                     dianpao_player = pao_data.get('target_player')
                     win_tile_type, win_tile_value = self._parse_tile(win_tile_str)
                     
+                    # 设置胜利状态
                     player_hand['is_winner'] = True
                     player_hand['win_type'] = 'dianpao'
                     player_hand['win_tile'] = {
@@ -315,7 +331,70 @@ class ReplayPlayer:
                         "value": win_tile_value
                     }
                     player_hand['dianpao_player_id'] = dianpao_player
-                    print(f"✅ 玩家{player_id}点炮胜利状态已设置: {win_tile_str} (点炮者: 玩家{dianpao_player})")
+                    
+                    # 🎯 关键：将点炮的胜利牌添加到已设置的手牌中
+                    win_tile_obj = {
+                        "type": win_tile_type,
+                        "value": win_tile_value,
+                        "id": None
+                    }
+                    
+                    # 确保tiles已经被设置（应该有10张牌）
+                    if 'tiles' in player_hand and player_hand['tiles']:
+                        player_hand['tiles'].append(win_tile_obj)
+                        player_hand['tile_count'] = len(player_hand['tiles'])
+                        print(f"🎉 玩家{player_id}点炮胜利: 手牌{len(player_hand['tiles'])-1}张 + 胡{win_tile_str} = 总共{len(player_hand['tiles'])}张")
+                        
+                        # 🔧 从点炮者的弃牌中移除被胡的牌
+                        dianpao_player_str = str(dianpao_player)
+                        if 'player_discarded_tiles' in game_state and dianpao_player_str in game_state['player_discarded_tiles']:
+                            discarded_tiles = game_state['player_discarded_tiles'][dianpao_player_str]
+                            removed = False
+                            # 从后往前找，移除最后一张相同的牌
+                            for i in range(len(discarded_tiles) - 1, -1, -1):
+                                tile = discarded_tiles[i]
+                                if tile and tile.get('type') == win_tile_type and tile.get('value') == win_tile_value:
+                                    discarded_tiles.pop(i)
+                                    print(f"🎯 从玩家{dianpao_player}弃牌中移除被胡的 {win_tile_str}")
+                                    removed = True
+                                    break
+                            if not removed:
+                                print(f"⚠️ 警告：未在玩家{dianpao_player}弃牌中找到 {win_tile_str}")
+                    else:
+                        print(f"❌ 错误：玩家{player_id}的手牌为空，无法添加胡牌")
+            
+            # 🔧 关键修复：设置游戏结束标志，确保前端显示所有玩家手牌
+            game_state['game_ended'] = True
+            game_state['show_all_hands'] = True
+            print("🎯 设置游戏结束标志: game_ended=True, show_all_hands=True")
+            
+            # 📊 详细调试：打印最终游戏状态
+            print("\n" + "="*80)
+            print("🔍 最终游戏状态调试信息:")
+            print("="*80)
+            for pid in ['0', '1', '2', '3']:
+                if pid in game_state.get('player_hands', {}):
+                    hand = game_state['player_hands'][pid]
+                    tiles = hand.get('tiles', [])
+                    is_winner = hand.get('is_winner', False)
+                    win_type = hand.get('win_type', 'None')
+                    win_tile = hand.get('win_tile', {})
+                    
+                    print(f"玩家{pid}: {len(tiles)}张手牌, 胜利={is_winner}, 类型={win_type}")
+                    if tiles:
+                        tile_strs = [f"{t.get('value')}{t.get('type')}" for t in tiles[:5]]
+                        print(f"  前5张: {tile_strs}")
+                        if is_winner and win_tile:
+                            print(f"  胜利牌: {win_tile.get('value')}{win_tile.get('type')}")
+                    
+                # 检查弃牌
+                if pid in game_state.get('player_discarded_tiles', {}):
+                    discards = game_state['player_discarded_tiles'][pid]
+                    if pid == '0':  # 特别关注玩家0的弃牌（应该缺少6万）
+                        print(f"玩家{pid}弃牌: {len(discards)}张")
+                        discard_strs = [f"{d.get('value')}{d.get('type')}" for d in discards if d]
+                        print(f"  弃牌详情: {discard_strs}")
+            print("="*80 + "\n")
             
             # 一次性更新完整游戏状态（包含手牌+碰杠牌+胜利状态）
             update_response = self.session.post(

@@ -1,0 +1,595 @@
+{
+  "game_info": {
+    "game_id": "test_final",
+    "description": "通过推导算法补全的完整牌谱",
+    "source": "推导算法生成",
+    "version": "auto_deduced",
+    "original_file": ".\\test.json"
+  },
+  "mjtype": "xuezhan_daodi",
+  "misssuit": {
+    "0": "筒",
+    "1": "筒",
+    "2": "条",
+    "3": "条"
+  },
+  "dong": "3",
+  "game_settings": {},
+  "initial_hands": {
+    "0": {
+      "tiles": [
+        "4万",
+        "8万",
+        "9万",
+        "9万",
+        "1条",
+        "2条",
+        "3条",
+        "3条",
+        "4条",
+        "7条",
+        "9条",
+        "9条",
+        "9条"
+      ],
+      "count": 13,
+      "source": "known",
+      "note": "原始数据中的已知初始手牌"
+    },
+    "1": {
+      "tiles": [
+        "1万",
+        "1万",
+        "1万",
+        "4万",
+        "4万",
+        "4条",
+        "4条",
+        "5条",
+        "5条",
+        "5条",
+        "8条",
+        "8条",
+        "8筒"
+      ],
+      "count": 13,
+      "source": "deduced",
+      "note": "使用推导算法计算的初始手牌"
+    },
+    "2": {
+      "tiles": [
+        "2万",
+        "2条",
+        "3万",
+        "4万",
+        "4筒",
+        "5万",
+        "5筒",
+        "6筒",
+        "7万",
+        "8筒",
+        "8筒",
+        "9筒",
+        "9筒"
+      ],
+      "count": 13,
+      "source": "deduced",
+      "note": "使用推导算法计算的初始手牌"
+    },
+    "3": {
+      "tiles": [
+        "2筒",
+        "2筒",
+        "2筒",
+        "3万",
+        "3万",
+        "3筒",
+        "3筒",
+        "4筒",
+        "5筒",
+        "6万",
+        "6筒",
+        "7万",
+        "8万"
+      ],
+      "count": 13,
+      "source": "deduced",
+      "note": "使用推导算法计算的初始手牌"
+    }
+  },
+  "actions": [
+    {
+      "sequence": 1,
+      "player_id": 3,
+      "type": "discard",
+      "tile": "7条"
+    },
+    {
+      "sequence": 2,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "6条"
+    },
+    {
+      "sequence": 3,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "4万"
+    },
+    {
+      "sequence": 4,
+      "player_id": 1,
+      "type": "peng",
+      "tile": "4万",
+      "target_player": 0
+    },
+    {
+      "sequence": 5,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "8筒"
+    },
+    {
+      "sequence": 6,
+      "player_id": 2,
+      "type": "peng",
+      "tile": "8筒",
+      "target_player": 1
+    },
+    {
+      "sequence": 7,
+      "player_id": 2,
+      "type": "discard",
+      "tile": "2条"
+    },
+    {
+      "sequence": 8,
+      "player_id": 3,
+      "type": "discard",
+      "tile": "7条"
+    },
+    {
+      "sequence": 9,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "3条"
+    },
+    {
+      "sequence": 10,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "8万"
+    },
+    {
+      "sequence": 11,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "6筒"
+    },
+    {
+      "sequence": 12,
+      "player_id": 2,
+      "type": "discard",
+      "tile": "7筒"
+    },
+    {
+      "sequence": 13,
+      "player_id": 3,
+      "type": "discard",
+      "tile": "2万"
+    },
+    {
+      "sequence": 14,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "4条"
+    },
+    {
+      "sequence": 15,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "9万"
+    },
+    {
+      "sequence": 16,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "9万"
+    },
+    {
+      "sequence": 17,
+      "player_id": 2,
+      "type": "discard",
+      "tile": "3筒"
+    },
+    {
+      "sequence": 18,
+      "player_id": 3,
+      "type": "discard",
+      "tile": "1筒"
+    },
+    {
+      "sequence": 19,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "6筒"
+    },
+    {
+      "sequence": 20,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "6筒"
+    },
+    {
+      "sequence": 21,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "7筒"
+    },
+    {
+      "sequence": 22,
+      "player_id": 2,
+      "type": "discard",
+      "tile": "1万"
+    },
+    {
+      "sequence": 23,
+      "player_id": 3,
+      "type": "zimo",
+      "tile": "3万"
+    },
+    {
+      "sequence": 24,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "6万"
+    },
+    {
+      "sequence": 25,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "6万"
+    },
+    {
+      "sequence": 26,
+      "player_id": 2,
+      "type": "hu",
+      "tile": "6万",
+      "target_player": 0
+    },
+    {
+      "sequence": 27,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "1条"
+    },
+    {
+      "sequence": 28,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "9万"
+    },
+    {
+      "sequence": 29,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "6万"
+    },
+    {
+      "sequence": 30,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "5万"
+    },
+    {
+      "sequence": 31,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "5万"
+    },
+    {
+      "sequence": 32,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "2万"
+    },
+    {
+      "sequence": 33,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "8条"
+    },
+    {
+      "sequence": 34,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "3条"
+    },
+    {
+      "sequence": 35,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "2条"
+    },
+    {
+      "sequence": 36,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "9筒"
+    },
+    {
+      "sequence": 37,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "9筒"
+    },
+    {
+      "sequence": 38,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "1条"
+    },
+    {
+      "sequence": 39,
+      "player_id": 0,
+      "type": "peng",
+      "tile": "1条",
+      "target_player": 1
+    },
+    {
+      "sequence": 40,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "3条"
+    },
+    {
+      "sequence": 41,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "8万"
+    },
+    {
+      "sequence": 42,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "5万"
+    },
+    {
+      "sequence": 43,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "5万"
+    },
+    {
+      "sequence": 44,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "9筒"
+    },
+    {
+      "sequence": 45,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "1筒"
+    },
+    {
+      "sequence": 46,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "1筒"
+    },
+    {
+      "sequence": 47,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "1筒"
+    },
+    {
+      "sequence": 48,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "3条"
+    },
+    {
+      "sequence": 49,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "3条"
+    },
+    {
+      "sequence": 50,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "8万"
+    },
+    {
+      "sequence": 51,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "5万"
+    },
+    {
+      "sequence": 52,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "5万"
+    },
+    {
+      "sequence": 53,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "4筒"
+    },
+    {
+      "sequence": 54,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "6条"
+    },
+    {
+      "sequence": 55,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "6条"
+    },
+    {
+      "sequence": 56,
+      "player_id": 1,
+      "type": "discard",
+      "tile": "6条"
+    },
+    {
+      "sequence": 57,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "1条"
+    },
+    {
+      "sequence": 58,
+      "player_id": 0,
+      "type": "jiagang",
+      "tile": "1条"
+    },
+    {
+      "sequence": 59,
+      "player_id": 0,
+      "type": "draw",
+      "tile": "7条"
+    },
+    {
+      "sequence": 60,
+      "player_id": 0,
+      "type": "discard",
+      "tile": "4条"
+    },
+    {
+      "sequence": 61,
+      "player_id": 1,
+      "type": "hu",
+      "tile": "4条",
+      "target_player": 0
+    }
+  ],
+  "final_hands": {
+    "0": {
+      "hand": [
+        "2条",
+        "3条",
+        "4条",
+        "6条",
+        "7条",
+        "7条",
+        "8条",
+        "9条",
+        "9条",
+        "9条"
+      ],
+      "melds": [
+        {
+          "type": "jiagang",
+          "tile": [
+            "1条",
+            "1条",
+            "1条",
+            "1条"
+          ],
+          "target_player": 1
+        }
+      ]
+    },
+    "1": {
+      "hand": [
+        "1万",
+        "1万",
+        "1万",
+        "4条",
+        "4条",
+        "5条",
+        "5条",
+        "5条",
+        "8条",
+        "8条"
+      ],
+      "pao_tile": {
+        "tile": "4条",
+        "target_player": 0
+      },
+      "melds": [
+        {
+          "type": "peng",
+          "tile": [
+            "4万",
+            "4万",
+            "4万"
+          ],
+          "target_player": 0
+        }
+      ]
+    },
+    "2": {
+      "hand": [
+        "2万",
+        "3万",
+        "4万",
+        "5万",
+        "7万",
+        "4筒",
+        "5筒",
+        "6筒",
+        "9筒",
+        "9筒"
+      ],
+      "pao_tile": {
+        "tile": "6万",
+        "target_player": 0
+      },
+      "melds": [
+        {
+          "type": "peng",
+          "tile": [
+            "8筒",
+            "8筒",
+            "8筒"
+          ],
+          "target_player": 1
+        }
+      ]
+    },
+    "3": {
+      "hand": [
+        "3万",
+        "3万",
+        "6万",
+        "7万",
+        "8万",
+        "2筒",
+        "2筒",
+        "2筒",
+        "3筒",
+        "3筒",
+        "4筒",
+        "5筒",
+        "6筒"
+      ],
+      "self_win_tile": {
+        "tile": "3万"
+      }
+    }
+  },
+  "deduction_method": {
+    "formula": "最初的手牌 = 最后的手牌 + 碰牌中自己的牌 + 自己碰牌后的出牌 + 杠牌中自己的牌",
+    "components": {
+      "final_hand": "游戏结束时的手牌",
+      "peng_self_tiles": "碰牌操作中消耗的自己的牌（每次碰牌消耗2张）",
+      "peng_followed_discards": "碰牌之后立即出的牌",
+      "gang_self_tiles": "杠牌操作中消耗的自己的牌（明杠3张，加杠1张）"
+    },
+    "deduction_results": {
+      "player_0": "13张 (known)",
+      "player_1": "13张 (deduced)",
+      "player_2": "13张 (deduced)",
+      "player_3": "13张 (deduced)"
+    },
+    "validation": "所有推导的初始手牌都应该是13张"
+  }
+}

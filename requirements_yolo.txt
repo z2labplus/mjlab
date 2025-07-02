@@ -1,0 +1,23 @@
+# YOLOv8麻将牌检测依赖
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+Pillow>=9.5.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+pandas>=2.0.0
+tqdm>=4.65.0
+
+# 视频处理
+ffmpeg-python>=0.2.0
+imageio>=2.31.0
+
+# 训练数据处理
+albumentations>=1.3.0
+roboflow>=1.1.0
+
+# 可选：CUDA支持 (如果有GPU)
+# torch==2.0.0+cu118 -f https://download.pytorch.org/whl/torch_stable.html
+# torchvision==0.15.0+cu118 -f https://download.pytorch.org/whl/torch_stable.html

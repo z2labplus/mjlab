@@ -1,0 +1,886 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 血战麻将项目规则 - 后端开发规范
+
+## 技术栈要求
+
+### 核心框架
+- **Python 3.11+** - 主要编程语言，使用最新特性
+- **FastAPI** - 现代化、高性能Web框架
+- **Pydantic** - 数据验证和序列化
+- **Uvicorn** - ASGI服务器
+
+### 数据存储
+- **Redis** - 内存数据库，用于缓存和会话管理
+- **JSON文件** - 游戏配置和静态数据存储
+
+### 其他依赖
+- **WebSockets** - 实时通信支持
+- **NumPy** - 数值计算，用于概率分析
+- **Pytest** - 单元测试框架
+
+## 项目结构规范
+
+```
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI应用入口
+│   ├── api/                 # API路由模块
+│   │   ├── __init__.py
+│   │   ├── v1/              # API版本管理
+│   │   │   ├── __init__.py
+│   │   │   ├── game.py      # 游戏相关API
+│   │   │   ├── player.py    # 玩家相关API
+│   │   │   └── websocket.py # WebSocket连接
+│   │   └── dependencies.py  # 依赖注入
+│   ├── core/                # 核心配置
+│   │   ├── __init__.py
+│   │   ├── config.py        # 应用配置
+│   │   ├── security.py      # 安全相关
+│   │   └── database.py      # 数据库连接
+│   ├── models/              # 数据模型
+│   │   ├── __init__.py
+│   │   ├── game.py          # 游戏数据模型
+│   │   ├── player.py        # 玩家数据模型
+│   │   └── response.py      # 响应模型
+│   ├── services/            # 业务逻辑服务
+│   │   ├── __init__.py
+│   │   ├── game_service.py  # 游戏逻辑服务
+│   │   ├── player_service.py# 玩家服务
+│   │   └── redis_service.py # Redis服务
+│   ├── algorithms/          # 麻将算法引擎
+│   │   ├── __init__.py
+│   │   ├── mahjong_engine.py# 麻将规则引擎
+│   │   ├── probability.py   # 概率计算
+│   │   ├── decision.py      # 决策算法
+│   │   └── card_analyzer.py # 牌型分析
+│   └── utils/               # 工具函数
+│       ├── __init__.py
+│       ├── constants.py     # 常量定义
+│       ├── validators.py    # 数据验证
+│       └── helpers.py       # 辅助函数
+├── tests/                   # 测试文件
+│   ├── __init__.py
+│   ├── test_api/
+│   ├── test_services/
+│   └── test_algorithms/
+├── config.py                # 全局配置
+├── requirements.txt         # 依赖包
+└── start_server.py          # 服务启动脚本
+```
+
+## 代码规范
+
+### FastAPI应用结构
+
+#### 1. 主应用配置
+```python
+# app/main.py
+from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+
+from app.api.v1 import game, player, websocket
+from app.core.config import settings
+from app.core.database import init_redis
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 启动时初始化
+    await init_redis()
+    yield
+    # 关闭时清理资源
+
+app = FastAPI(
+    title="血战麻将 API",
+    description="智能血战麻将辅助分析工具API",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS配置
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_HOSTS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 路由注册
+app.include_router(game.router, prefix="/api/v1/game", tags=["game"])
+app.include_router(player.router, prefix="/api/v1/player", tags=["player"])
+app.include_router(websocket.router, prefix="/ws", tags=["websocket"])
+
+# 全局异常处理
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "内部服务器错误"}
+    )
+```
+
+#### 2. 配置管理
+```python
+# app/core/config.py
+from pydantic import BaseSettings, Field
+from typing import List, Optional
+
+class Settings(BaseSettings):
+    # 应用配置
+    APP_NAME: str = "血战麻将 API"
+    DEBUG: bool = False
+    VERSION: str = "1.0.0"
+    
+    # 服务器配置
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1"]
+    
+    # Redis配置
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: Optional[str] = None
+    
+    # 游戏配置
+    MAX_PLAYERS: int = 4
+    GAME_TIMEOUT: int = 3600  # 秒
+    
+    # 算法配置
+    MONTE_CARLO_SIMULATIONS: int = 10000
+    PROBABILITY_THRESHOLD: float = 0.1
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+settings = Settings()
+```
+
+### Pydantic数据模型
+
+#### 1. 基础数据模型
+```python
+# app/models/game.py
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional, Literal
+from enum import Enum
+
+class CardSuit(str, Enum):
+    WAN = "wan"      # 万
+    TIAO = "tiao"    # 条
+    TONG = "tong"    # 筒
+
+class MahjongCard(BaseModel):
+    id: int = Field(..., ge=1, le=29, description="牌的唯一标识")
+    suit: CardSuit = Field(..., description="花色")
+    value: int = Field(..., ge=1, le=9, description="牌面值")
+    
+    @validator('id')
+    def validate_id(cls, v, values):
+        if 'suit' in values:
+            suit_ranges = {
+                CardSuit.WAN: range(1, 10),
+                CardSuit.TIAO: range(11, 20),
+                CardSuit.TONG: range(21, 30)
+            }
+            if v not in suit_ranges[values['suit']]:
+                raise ValueError(f"牌ID {v} 与花色 {values['suit']} 不匹配")
+        return v
+
+class PlayerHand(BaseModel):
+    cards: List[MahjongCard] = Field(default_factory=list, description="手牌")
+    melds: List[dict] = Field(default_factory=list, description="明刻/明杠")
+    missing_suit: Optional[CardSuit] = Field(None, description="缺的花色")
+    
+    @validator('cards')
+    def validate_hand_size(cls, v):
+        if len(v) > 14:
+            raise ValueError("手牌数量不能超过14张")
+        return v
+
+class GameState(BaseModel):
+    game_id: str = Field(..., description="游戏ID")
+    players: List[dict] = Field(..., description="玩家列表")
+    current_player: int = Field(0, ge=0, description="当前玩家索引")
+    deck: List[MahjongCard] = Field(default_factory=list, description="剩余牌库")
+    discard_pile: List[MahjongCard] = Field(default_factory=list, description="弃牌堆")
+    round_number: int = Field(1, ge=1, description="局数")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "game_id": "game_123",
+                "players": [],
+                "current_player": 0,
+                "deck": [],
+                "discard_pile": [],
+                "round_number": 1
+            }
+        }
+```
+
+#### 2. API响应模型
+```python
+# app/models/response.py
+from pydantic import BaseModel
+from typing import Generic, TypeVar, Optional, Any
+
+T = TypeVar('T')
+
+class ApiResponse(BaseModel, Generic[T]):
+    success: bool = Field(..., description="请求是否成功")
+    data: Optional[T] = Field(None, description="响应数据")
+    message: str = Field("", description="响应消息")
+    code: int = Field(200, description="状态码")
+
+class GameAnalysisResponse(BaseModel):
+    suggested_discard: Optional[MahjongCard] = Field(None, description="建议弃牌")
+    win_probability: float = Field(0.0, ge=0.0, le=1.0, description="胡牌概率")
+    available_actions: List[str] = Field(default_factory=list, description="可用操作")
+    remaining_cards: dict = Field(default_factory=dict, description="剩余牌统计")
+
+class ErrorResponse(BaseModel):
+    detail: str = Field(..., description="错误详情")
+    error_code: Optional[str] = Field(None, description="错误代码")
+```
+
+### API路由设计
+
+#### 1. 游戏API
+```python
+# app/api/v1/game.py
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from typing import List
+
+from app.models.game import GameState, MahjongCard
+from app.models.response import ApiResponse, GameAnalysisResponse
+from app.services.game_service import GameService
+from app.api.dependencies import get_game_service
+
+router = APIRouter()
+
+@router.post("/create", response_model=ApiResponse[GameState])
+async def create_game(
+    players_count: int = 4,
+    game_service: GameService = Depends(get_game_service)
+):
+    """创建新游戏"""
+    try:
+        game_state = await game_service.create_game(players_count)
+        return ApiResponse(
+            success=True,
+            data=game_state,
+            message="游戏创建成功"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{game_id}", response_model=ApiResponse[GameState])
+async def get_game(
+    game_id: str,
+    game_service: GameService = Depends(get_game_service)
+):
+    """获取游戏状态"""
+    game_state = await game_service.get_game(game_id)
+    if not game_state:
+        raise HTTPException(status_code=404, detail="游戏不存在")
+    
+    return ApiResponse(
+        success=True,
+        data=game_state,
+        message="获取成功"
+    )
+
+@router.post("/{game_id}/draw-card", response_model=ApiResponse[MahjongCard])
+async def draw_card(
+    game_id: str,
+    player_id: str,
+    game_service: GameService = Depends(get_game_service)
+):
+    """摸牌"""
+    try:
+        card = await game_service.draw_card(game_id, player_id)
+        return ApiResponse(
+            success=True,
+            data=card,
+            message="摸牌成功"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{game_id}/analyze", response_model=ApiResponse[GameAnalysisResponse])
+async def analyze_game(
+    game_id: str,
+    player_id: str,
+    background_tasks: BackgroundTasks,
+    game_service: GameService = Depends(get_game_service)
+):
+    """游戏分析"""
+    try:
+        analysis = await game_service.analyze_game(game_id, player_id)
+        
+        # 后台任务：更新统计数据
+        background_tasks.add_task(
+            game_service.update_statistics, 
+            game_id, 
+            player_id
+        )
+        
+        return ApiResponse(
+            success=True,
+            data=analysis,
+            message="分析完成"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="分析失败")
+```
+
+#### 2. WebSocket连接
+```python
+# app/api/v1/websocket.py
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import Dict, List
+import json
+import logging
+
+from app.services.game_service import GameService
+
+router = APIRouter()
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, List[WebSocket]] = {}
+    
+    async def connect(self, websocket: WebSocket, game_id: str):
+        await websocket.accept()
+        if game_id not in self.active_connections:
+            self.active_connections[game_id] = []
+        self.active_connections[game_id].append(websocket)
+    
+    def disconnect(self, websocket: WebSocket, game_id: str):
+        if game_id in self.active_connections:
+            self.active_connections[game_id].remove(websocket)
+            if not self.active_connections[game_id]:
+                del self.active_connections[game_id]
+    
+    async def send_to_game(self, message: dict, game_id: str):
+        if game_id in self.active_connections:
+            for connection in self.active_connections[game_id]:
+                try:
+                    await connection.send_text(json.dumps(message))
+                except:
+                    # 处理断开连接
+                    pass
+
+manager = ConnectionManager()
+
+@router.websocket("/game/{game_id}")
+async def websocket_endpoint(websocket: WebSocket, game_id: str):
+    await manager.connect(websocket, game_id)
+    
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            # 处理不同类型的消息
+            if message.get("type") == "game_action":
+                # 处理游戏操作
+                await handle_game_action(message, game_id)
+            elif message.get("type") == "chat":
+                # 处理聊天消息
+                await manager.send_to_game(message, game_id)
+                
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, game_id)
+    except Exception as e:
+        logging.error(f"WebSocket error: {e}")
+        manager.disconnect(websocket, game_id)
+
+async def handle_game_action(message: dict, game_id: str):
+    """处理游戏操作"""
+    try:
+        # 游戏逻辑处理
+        result = await process_game_action(message, game_id)
+        
+        # 广播给所有连接的客户端
+        await manager.send_to_game({
+            "type": "game_update",
+            "data": result
+        }, game_id)
+        
+    except Exception as e:
+        await manager.send_to_game({
+            "type": "error",
+            "message": str(e)
+        }, game_id)
+```
+
+### 业务逻辑服务
+
+#### 1. 游戏服务
+```python
+# app/services/game_service.py
+from typing import Optional, List
+import asyncio
+import uuid
+
+from app.models.game import GameState, MahjongCard, PlayerHand
+from app.models.response import GameAnalysisResponse
+from app.algorithms.mahjong_engine import MahjongEngine
+from app.algorithms.probability import ProbabilityCalculator
+from app.services.redis_service import RedisService
+
+class GameService:
+    def __init__(self, redis_service: RedisService):
+        self.redis = redis_service
+        self.mahjong_engine = MahjongEngine()
+        self.probability_calculator = ProbabilityCalculator()
+    
+    async def create_game(self, players_count: int = 4) -> GameState:
+        """创建新游戏"""
+        if players_count < 2 or players_count > 4:
+            raise ValueError("玩家数量必须在2-4之间")
+        
+        game_id = str(uuid.uuid4())
+        
+        # 初始化游戏状态
+        game_state = GameState(
+            game_id=game_id,
+            players=[
+                {
+                    "id": f"player_{i}",
+                    "hand": PlayerHand().dict(),
+                    "score": 0,
+                    "is_hu": False
+                }
+                for i in range(players_count)
+            ],
+            deck=self.mahjong_engine.create_deck(),
+            discard_pile=[]
+        )
+        
+        # 发牌
+        await self._deal_cards(game_state)
+        
+        # 保存到Redis
+        await self.redis.set_game_state(game_id, game_state)
+        
+        return game_state
+    
+    async def get_game(self, game_id: str) -> Optional[GameState]:
+        """获取游戏状态"""
+        return await self.redis.get_game_state(game_id)
+    
+    async def draw_card(self, game_id: str, player_id: str) -> MahjongCard:
+        """摸牌"""
+        game_state = await self.get_game(game_id)
+        if not game_state:
+            raise ValueError("游戏不存在")
+        
+        if not game_state.deck:
+            raise ValueError("牌库已空")
+        
+        # 从牌库摸牌
+        card = game_state.deck.pop(0)
+        
+        # 找到玩家并添加到手牌
+        for player in game_state.players:
+            if player["id"] == player_id:
+                player["hand"]["cards"].append(card.dict())
+                break
+        else:
+            raise ValueError("玩家不存在")
+        
+        # 保存状态
+        await self.redis.set_game_state(game_id, game_state)
+        
+        return card
+    
+    async def analyze_game(
+        self, 
+        game_id: str, 
+        player_id: str
+    ) -> GameAnalysisResponse:
+        """游戏分析"""
+        game_state = await self.get_game(game_id)
+        if not game_state:
+            raise ValueError("游戏不存在")
+        
+        # 找到当前玩家
+        current_player = None
+        for player in game_state.players:
+            if player["id"] == player_id:
+                current_player = player
+                break
+        
+        if not current_player:
+            raise ValueError("玩家不存在")
+        
+        # 并行执行分析任务
+        tasks = [
+            self._analyze_discard_suggestion(current_player, game_state),
+            self._calculate_win_probability(current_player, game_state),
+            self._get_available_actions(current_player, game_state),
+            self._count_remaining_cards(game_state)
+        ]
+        
+        results = await asyncio.gather(*tasks)
+        
+        return GameAnalysisResponse(
+            suggested_discard=results[0],
+            win_probability=results[1],
+            available_actions=results[2],
+            remaining_cards=results[3]
+        )
+    
+    async def _deal_cards(self, game_state: GameState):
+        """发牌"""
+        import random
+        random.shuffle(game_state.deck)
+        
+        # 每人发13张牌
+        for player in game_state.players:
+            for _ in range(13):
+                if game_state.deck:
+                    card = game_state.deck.pop(0)
+                    player["hand"]["cards"].append(card.dict())
+    
+    async def _analyze_discard_suggestion(
+        self, 
+        player: dict, 
+        game_state: GameState
+    ) -> Optional[MahjongCard]:
+        """分析弃牌建议"""
+        # 使用算法引擎分析最优弃牌
+        hand_cards = [MahjongCard(**card) for card in player["hand"]["cards"]]
+        return await self.mahjong_engine.suggest_discard(hand_cards)
+    
+    async def _calculate_win_probability(
+        self, 
+        player: dict, 
+        game_state: GameState
+    ) -> float:
+        """计算胡牌概率"""
+        hand_cards = [MahjongCard(**card) for card in player["hand"]["cards"]]
+        remaining_cards = game_state.deck
+        
+        return await self.probability_calculator.calculate_win_probability(
+            hand_cards, 
+            remaining_cards
+        )
+    
+    async def _get_available_actions(
+        self, 
+        player: dict, 
+        game_state: GameState
+    ) -> List[str]:
+        """获取可用操作"""
+        actions = []
+        hand_cards = [MahjongCard(**card) for card in player["hand"]["cards"]]
+        
+        # 检查是否可以胡牌
+        if await self.mahjong_engine.can_win(hand_cards):
+            actions.append("hu")
+        
+        # 检查是否可以杠牌
+        if await self.mahjong_engine.can_kong(hand_cards):
+            actions.append("kong")
+        
+        # 总是可以弃牌
+        actions.append("discard")
+        
+        return actions
+    
+    async def _count_remaining_cards(self, game_state: GameState) -> dict:
+        """统计剩余牌"""
+        remaining = {}
+        for card in game_state.deck:
+            key = f"{card.suit}_{card.value}"
+            remaining[key] = remaining.get(key, 0) + 1
+        return remaining
+```
+
+### 麻将算法引擎
+
+#### 1. 核心算法
+```python
+# app/algorithms/mahjong_engine.py
+from typing import List, Optional, Set, Tuple
+import asyncio
+from collections import Counter
+
+from app.models.game import MahjongCard, CardSuit
+from app.utils.constants import MAHJONG_CARDS
+
+class MahjongEngine:
+    """麻将规则引擎"""
+    
+    def __init__(self):
+        self.winning_patterns = self._init_winning_patterns()
+    
+    def create_deck(self) -> List[MahjongCard]:
+        """创建牌库"""
+        deck = []
+        for suit in CardSuit:
+            for value in range(1, 10):
+                card_id = self._get_card_id(suit, value)
+                # 每种牌4张
+                for _ in range(4):
+                    deck.append(MahjongCard(
+                        id=card_id,
+                        suit=suit,
+                        value=value
+                    ))
+        return deck
+    
+    async def can_win(self, hand_cards: List[MahjongCard]) -> bool:
+        """检查是否可以胡牌"""
+        if len(hand_cards) % 3 != 2:
+            return False
+        
+        # 检查花色限制（不超过2门花色）
+        suits = set(card.suit for card in hand_cards)
+        if len(suits) > 2:
+            return False
+        
+        # 检查是否符合胡牌牌型
+        return await self._check_winning_pattern(hand_cards)
+    
+    async def suggest_discard(
+        self, 
+        hand_cards: List[MahjongCard]
+    ) -> Optional[MahjongCard]:
+        """建议弃牌"""
+        if not hand_cards:
+            return None
+        
+        # 计算每张牌的价值分数
+        card_values = {}
+        for card in hand_cards:
+            value = await self._calculate_card_value(card, hand_cards)
+            card_values[card] = value
+        
+        # 返回价值最低的牌
+        return min(card_values.keys(), key=lambda x: card_values[x])
+    
+    async def can_kong(self, hand_cards: List[MahjongCard]) -> bool:
+        """检查是否可以杠牌"""
+        card_counts = Counter((card.suit, card.value) for card in hand_cards)
+        return any(count >= 4 for count in card_counts.values())
+    
+    async def _check_winning_pattern(
+        self, 
+        hand_cards: List[MahjongCard]
+    ) -> bool:
+        """检查胡牌牌型"""
+        # 将手牌按花色分组
+        suits_cards = {suit: [] for suit in CardSuit}
+        for card in hand_cards:
+            suits_cards[card.suit].append(card.value)
+        
+        # 对每种花色的牌进行排序
+        for suit in suits_cards:
+            suits_cards[suit].sort()
+        
+        # 检查是否能组成有效的牌型组合
+        return await self._is_valid_combination(suits_cards)
+    
+    async def _is_valid_combination(self, suits_cards: dict) -> bool:
+        """检查是否为有效的牌型组合"""
+        # 简化的胡牌判断逻辑
+        # 实际实现需要更复杂的算法来判断所有可能的组合
+        
+        total_cards = sum(len(cards) for cards in suits_cards.values())
+        if total_cards % 3 != 2:
+            return False
+        
+        # 检查是否有将牌（对子）
+        has_pair = False
+        for suit, cards in suits_cards.items():
+            if len(cards) >= 2:
+                card_counts = Counter(cards)
+                if any(count >= 2 for count in card_counts.values()):
+                    has_pair = True
+                    break
+        
+        return has_pair
+    
+    async def _calculate_card_value(
+        self, 
+        card: MahjongCard, 
+        hand_cards: List[MahjongCard]
+    ) -> float:
+        """计算牌的价值分数"""
+        # 基础分数
+        value = 1.0
+        
+        # 如果这张牌在手牌中有多张，价值降低
+        same_cards = [c for c in hand_cards if c.suit == card.suit and c.value == card.value]
+        if len(same_cards) > 1:
+            value *= 0.5
+        
+        # 边张（1和9）价值较低
+        if card.value in [1, 9]:
+            value *= 0.8
+        
+        # 中张（4,5,6）价值较高
+        if card.value in [4, 5, 6]:
+            value *= 1.2
+        
+        return value
+    
+    def _get_card_id(self, suit: CardSuit, value: int) -> int:
+        """获取牌的ID"""
+        base_ids = {
+            CardSuit.WAN: 0,
+            CardSuit.TIAO: 10,
+            CardSuit.TONG: 20
+        }
+        return base_ids[suit] + value
+    
+    def _init_winning_patterns(self) -> List[List[int]]:
+        """初始化胡牌牌型"""
+        # 这里可以定义所有可能的胡牌牌型
+        # 简化实现
+        return []
+```
+
+### 测试规范
+
+#### 1. 单元测试
+```python
+# tests/test_services/test_game_service.py
+import pytest
+from unittest.mock import AsyncMock, Mock
+
+from app.services.game_service import GameService
+from app.models.game import GameState, MahjongCard, CardSuit
+
+@pytest.fixture
+async def game_service():
+    redis_service = AsyncMock()
+    return GameService(redis_service)
+
+@pytest.mark.asyncio
+async def test_create_game(game_service):
+    """测试创建游戏"""
+    game_state = await game_service.create_game(players_count=4)
+    
+    assert game_state.game_id
+    assert len(game_state.players) == 4
+    assert len(game_state.deck) > 0
+    
+    # 检查每个玩家是否有13张手牌
+    for player in game_state.players:
+        assert len(player["hand"]["cards"]) == 13
+
+@pytest.mark.asyncio
+async def test_draw_card(game_service):
+    """测试摸牌"""
+    # 创建测试游戏状态
+    game_state = GameState(
+        game_id="test_game",
+        players=[{
+            "id": "player_1",
+            "hand": {"cards": [], "melds": []},
+            "score": 0,
+            "is_hu": False
+        }],
+        deck=[MahjongCard(id=1, suit=CardSuit.WAN, value=1)]
+    )
+    
+    game_service.redis.get_game_state.return_value = game_state
+    
+    card = await game_service.draw_card("test_game", "player_1")
+    
+    assert card.suit == CardSuit.WAN
+    assert card.value == 1
+
+@pytest.mark.asyncio
+async def test_invalid_players_count(game_service):
+    """测试无效的玩家数量"""
+    with pytest.raises(ValueError, match="玩家数量必须在2-4之间"):
+        await game_service.create_game(players_count=5)
+```
+
+#### 2. API测试
+```python
+# tests/test_api/test_game.py
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+
+client = TestClient(app)
+
+def test_create_game():
+    """测试创建游戏API"""
+    response = client.post("/api/v1/game/create?players_count=4")
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert "game_id" in data["data"]
+
+def test_get_nonexistent_game():
+    """测试获取不存在的游戏"""
+    response = client.get("/api/v1/game/nonexistent_id")
+    
+    assert response.status_code == 404
+    data = response.json()
+    assert "游戏不存在" in data["detail"]
+```
+
+### 部署和运维
+
+#### 1. 启动脚本
+```python
+# start_server.py
+import uvicorn
+from app.core.config import settings
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "app.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        workers=1 if settings.DEBUG else 4
+    )
+```
+
+#### 2. 环境配置
+```env
+# .env
+DEBUG=False
+HOST=0.0.0.0
+PORT=8000
+REDIS_HOST=localhost
+REDIS_PORT=6379
+MONTE_CARLO_SIMULATIONS=10000
+```
+
+### 性能优化
+
+#### 1. 异步编程
+- 所有I/O操作使用异步
+- 数据库查询使用连接池
+- 长时间计算使用后台任务
+
+#### 2. 缓存策略
+- Redis缓存游戏状态
+- 算法结果缓存
+- API响应缓存
+
+#### 3. 错误处理
+- 全局异常处理
+- 详细的错误日志
+- 优雅的降级策略 

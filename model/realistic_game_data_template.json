@@ -1,0 +1,96 @@
+{
+  "game_info": {
+    "game_id": "realistic_game_001",
+    "description": "现实情况的游戏数据模板 - 只记录可观察到的信息"
+  },
+  "players": {
+    "0": {
+      "name": "自己",
+      "final_hand": [
+        "2万", "3万", "4万", "5万", "6万", "7万", "8万",
+        "3条", "4条", "5条", "6条"
+      ],
+      "actions": [
+        {"type": "draw", "card": "5条", "note": "自己的摸牌是知道的"},
+        {"type": "discard", "card": "9万"},
+        {"type": "draw", "card": "6条"},
+        {"type": "discard", "card": "1万"},
+        {"type": "peng", "card": "2条", "note": "碰了其他玩家打出的2条"}
+      ],
+      "melds": [
+        {"type": "peng", "cards": ["2条", "2条", "2条"]}
+      ]
+    },
+    "1": {
+      "name": "其他玩家1",
+      "final_hand": [
+        "1万", "1万", "7万", "8万", "9万",
+        "1条", "1条", "6条", "7条", "8条",
+        "1筒", "2筒", "3筒"
+      ],
+      "actions": [
+        {"type": "draw_count", "count": 5, "note": "只知道摸了5次牌，不知道具体牌面"},
+        {"type": "discard", "card": "4万", "note": "能看到打出的牌"},
+        {"type": "discard", "card": "5筒"},
+        {"type": "discard", "card": "东"},
+        {"type": "discard", "card": "2条", "note": "这张被自己碰了"}
+      ],
+      "melds": [],
+      "unknown_draws": 5,
+      "note": "其他玩家的摸牌我们看不到，只能推测"
+    },
+    "2": {
+      "name": "其他玩家2", 
+      "final_hand": [
+        "3万", "4万", "5万", "6万", "7万",
+        "2条", "3条", "4条", "5条",
+        "1筒", "1筒", "2筒", "3筒"
+      ],
+      "actions": [
+        {"type": "draw_count", "count": 3},
+        {"type": "discard", "card": "8万"},
+        {"type": "discard", "card": "9条"},
+        {"type": "gang", "card": "白", "gang_type": "an_gang", "note": "暗杠我们能看到"}
+      ],
+      "melds": [
+        {"type": "gang", "cards": ["白", "白", "白", "白"], "gang_type": "an_gang"}
+      ],
+      "unknown_draws": 3
+    },
+    "3": {
+      "name": "其他玩家3",
+      "final_hand": [
+        "8万", "9万", "7条", "8条", "9条",
+        "4筒", "5筒", "6筒", "7筒", "8筒", "9筒"
+      ],
+      "actions": [
+        {"type": "draw_count", "count": 4},
+        {"type": "discard", "card": "1万"},
+        {"type": "discard", "card": "中"},
+        {"type": "peng", "card": "发", "note": "碰其他人打的发"}
+      ],
+      "melds": [
+        {"type": "peng", "cards": ["发", "发", "发"]}
+      ],
+      "unknown_draws": 4
+    }
+  },
+  "observable_info": {
+    "discarded_cards": [
+      "9万", "1万", "4万", "5筒", "东", "2条",
+      "8万", "9条", "1万", "中"
+    ],
+    "visible_melds": [
+      {"player": "0", "type": "peng", "cards": ["2条", "2条", "2条"]},
+      {"player": "2", "type": "gang", "cards": ["白", "白", "白", "白"]},
+      {"player": "3", "type": "peng", "cards": ["发", "发", "发"]}
+    ],
+    "total_rounds": 16,
+    "note": "这些是所有玩家都能观察到的信息"
+  },
+  "推导限制": {
+    "自己": "完全可推导 - 知道所有摸牌和弃牌",
+    "其他玩家": "部分可推导 - 只知道弃牌和碰杠，不知道摸牌内容",
+    "推导方法": "用最终手牌 + 弃牌 + 碰杠消耗 - 摸牌次数(未知内容)"
+  }
+}

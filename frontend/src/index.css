@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 导入自定义动画样式 */
+@import './styles/animations.css';
+
+@layer base {
+  html {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'SimHei', sans-serif;
+  }
+  
+  body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .mahjong-tile {
+    @apply relative flex items-center justify-center;
+    @apply border-2 rounded-tile cursor-pointer;
+    @apply font-bold select-none transition-all duration-200;
+    @apply shadow-tile hover:shadow-tile-hover;
+  }
+  
+  .mahjong-tile:hover {
+    transform: translateY(-2px);
+  }
+  
+  .mahjong-tile:active {
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 加载动画 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 麻将牌特殊效果 */
+.tile-glow {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.tile-recommended {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  .mahjong-tile {
+    @apply text-xs;
+  }
+}
+
+/* 血战麻将基础样式 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* 杠牌显示样式 */
+.kong-display-container {
+  min-height: 60px;
+}
+
+.kong-container {
+  @apply flex items-end;
+}
+
+.direct-kong {
+  @apply relative;
+}
+
+.direct-kong .horizontal-card {
+  @apply ml-1;
+}
+
+.added-kong .added-card {
+  @apply relative;
+}
+
+/* 不同位置的杠牌显示 */
+.player-bottom .kong-container {
+  @apply flex-row;
+}
+
+.player-right .kong-container {
+  @apply flex-col;
+}
+
+.player-top .kong-container {
+  @apply flex-row-reverse;
+}
+
+.player-left .kong-container {
+  @apply flex-col-reverse;
+}
+
+/* 麻将牌样式增强 */
+.mahjong-card {
+  @apply transition-all duration-200;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mahjong-card:hover {
+  @apply transform -translate-y-1;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* 响应式杠牌显示 */
+@media (max-width: 768px) {
+  .kong-mobile .kong-container {
+    @apply scale-90;
+  }
+  
+  .kong-mobile .mahjong-card {
+    @apply text-xs;
+  }
+}
+
+@media (min-width: 769px) {
+  .kong-desktop .kong-container {
+    @apply scale-100;
+  }
+}
+
+/* 动画效果 */
+@keyframes kong-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.kong-animation {
+  animation: kong-appear 0.5s ease-out;
+}
+
+/* 强制selected样式 - 用于调试暗杠显示问题 */
+.force-selected {
+  background-color: rgb(219 234 254) !important; /* bg-blue-100 */
+  border-color: rgb(96 165 250) !important; /* border-blue-400 */
+  color: rgb(30 64 175) !important; /* text-blue-800 */
+  box-shadow: 0 0 0 2px rgb(147 197 253) !important; /* ring-2 ring-blue-300 */
+}
+
+/* 工具提示样式 */
+.tooltip-container {
+  @apply relative;
+}
+
+.tooltip-container:hover .tooltip {
+  @apply opacity-100;
+}
+
+.tooltip {
+  @apply opacity-0 transition-opacity duration-200;
+} 

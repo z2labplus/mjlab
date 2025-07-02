@@ -1,0 +1,2 @@
+* text=auto eol=lf
+frontend/node_modules/ -diff

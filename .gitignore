@@ -1,0 +1,17 @@
+frontend/node_modules/      # 前端项目依赖
+node_modules/      # 前端项目依赖
+frontend/dist/              # 编译输出目录
+dist/              # 编译输出目录
+frontend/build/             # 构建目录
+build/             # 构建目录
+.idea/             # IntelliJ IDEA 配置
+.vscode/           # VS Code 配置
+.env               # 环境变量
+.env.local         # 本地环境变量
+.env.development   # 开发环境变量
+.env.production    # 生产环境变量
+.env.test          # 测试环境变量
+*.zip
+Redis-x64-3.2.100/
+*.mkv
+**/node_modules/

@@ -1,0 +1,629 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 血战麻将项目规则 - API标准规范
+
+## API设计原则
+
+### RESTful设计规范
+- **资源导向** - URL表示资源，HTTP方法表示操作
+- **无状态** - 每个请求包含完整的处理信息
+- **统一接口** - 标准化的HTTP方法和状态码
+- **分层架构** - 清晰的API层次结构
+- **缓存友好** - 合理使用HTTP缓存机制
+
+### 版本管理
+- **URL版本控制** - `/api/v1/`, `/api/v2/`
+- **向后兼容** - 新版本保持向后兼容性
+- **弃用策略** - 明确的API弃用时间表
+- **版本文档** - 每个版本的详细文档
+
+## URL设计规范
+
+### 基础URL结构
+```
+https://api.mahjong.com/api/v1/{resource}/{id?}/{action?}
+```
+
+### 资源命名规则
+- **小写字母** - 全部使用小写字母
+- **连字符分隔** - 使用连字符分隔单词 (`game-sessions`)
+- **复数形式** - 集合资源使用复数 (`/games`, `/players`)
+- **层次清晰** - 体现资源之间的层次关系
+
+### 标准URL模式
+```
+# 游戏相关API
+GET    /api/v1/games                     # 获取游戏列表
+POST   /api/v1/games                     # 创建新游戏
+GET    /api/v1/games/{game_id}           # 获取游戏详情
+PUT    /api/v1/games/{game_id}           # 更新游戏
+DELETE /api/v1/games/{game_id}           # 删除游戏
+
+# 游戏操作API
+POST   /api/v1/games/{game_id}/draw      # 摸牌
+POST   /api/v1/games/{game_id}/discard   # 弃牌
+POST   /api/v1/games/{game_id}/peng      # 碰牌
+POST   /api/v1/games/{game_id}/gang      # 杠牌
+POST   /api/v1/games/{game_id}/hu        # 胡牌
+
+# 分析相关API
+POST   /api/v1/games/{game_id}/analyze   # 游戏分析
+GET    /api/v1/games/{game_id}/statistics # 游戏统计
+
+# 玩家相关API
+GET    /api/v1/players                   # 获取玩家列表
+POST   /api/v1/players                   # 创建玩家
+GET    /api/v1/players/{player_id}       # 获取玩家信息
+PUT    /api/v1/players/{player_id}       # 更新玩家信息
+
+# 嵌套资源API
+GET    /api/v1/games/{game_id}/players   # 获取游戏中的玩家
+POST   /api/v1/games/{game_id}/players   # 添加玩家到游戏
+```
+
+## HTTP方法规范
+
+### 标准HTTP方法
+- **GET** - 查询资源，幂等且安全
+- **POST** - 创建资源或执行操作
+- **PUT** - 完整更新资源，幂等
+- **PATCH** - 部分更新资源
+- **DELETE** - 删除资源，幂等
+
+### 方法使用指南
+```python
+# 正确使用示例
+GET    /api/v1/games/{id}        # 查询游戏状态
+POST   /api/v1/games             # 创建新游戏
+POST   /api/v1/games/{id}/draw   # 执行摸牌操作
+PUT    /api/v1/games/{id}        # 完整更新游戏状态
+PATCH  /api/v1/games/{id}        # 部分更新游戏设置
+DELETE /api/v1/games/{id}        # 删除游戏
+```
+
+## HTTP状态码规范
+
+### 成功状态码 (2xx)
+- **200 OK** - 请求成功，返回数据
+- **201 Created** - 资源创建成功
+- **202 Accepted** - 请求已接受，异步处理
+- **204 No Content** - 请求成功，无返回内容
+
+### 客户端错误 (4xx)
+- **400 Bad Request** - 请求参数错误
+- **401 Unauthorized** - 未认证
+- **403 Forbidden** - 无权限访问
+- **404 Not Found** - 资源不存在
+- **409 Conflict** - 资源冲突
+- **422 Unprocessable Entity** - 请求格式正确但语义错误
+- **429 Too Many Requests** - 请求频率超限
+
+### 服务器错误 (5xx)
+- **500 Internal Server Error** - 服务器内部错误
+- **502 Bad Gateway** - 网关错误
+- **503 Service Unavailable** - 服务不可用
+- **504 Gateway Timeout** - 网关超时
+
+## 请求格式规范
+
+### Content-Type标准
+- **application/json** - JSON格式数据
+- **application/x-www-form-urlencoded** - 表单数据
+- **multipart/form-data** - 文件上传
+
+### 请求头规范
+```http
+# 必需的请求头
+Content-Type: application/json
+Accept: application/json
+User-Agent: MahjongApp/1.0.0
+
+# 可选的请求头
+Authorization: Bearer {jwt_token}
+X-Request-ID: {unique_request_id}
+X-Client-Version: 1.0.0
+```
+
+### 请求体格式
+```json
+{
+  "data": {
+    // 主要数据内容
+  },
+  "meta": {
+    // 元数据信息
+    "timestamp": "2024-01-01T00:00:00Z",
+    "client_version": "1.0.0"
+  }
+}
+```
+
+## 响应格式规范
+
+### 统一响应结构
+```python
+# app/models/response.py
+class ApiResponse(BaseModel, Generic[T]):
+    success: bool = Field(..., description="请求是否成功")
+    data: Optional[T] = Field(None, description="响应数据")
+    message: str = Field("", description="响应消息")
+    code: int = Field(200, description="业务状态码")
+    timestamp: datetime = Field(default_factory=datetime.now)
+    request_id: Optional[str] = Field(None, description="请求ID")
+```
+
+### 成功响应示例
+```json
+{
+  "success": true,
+  "data": {
+    "game_id": "game_123",
+    "status": "active",
+    "players": [...]
+  },
+  "message": "游戏创建成功",
+  "code": 200,
+  "timestamp": "2024-01-01T00:00:00Z",
+  "request_id": "req_123456"
+}
+```
+
+### 错误响应示例
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "游戏不存在",
+  "code": 404,
+  "timestamp": "2024-01-01T00:00:00Z",
+  "request_id": "req_123456",
+  "errors": [
+    {
+      "field": "game_id",
+      "code": "NOT_FOUND",
+      "message": "指定的游戏ID不存在"
+    }
+  ]
+}
+```
+
+### 分页响应格式
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "pagination": {
+      "page": 1,
+      "size": 20,
+      "total": 100,
+      "pages": 5,
+      "has_next": true,
+      "has_prev": false
+    }
+  },
+  "message": "查询成功"
+}
+```
+
+## 查询参数规范
+
+### 分页参数
+```
+GET /api/v1/games?page=1&size=20&sort=created_at&order=desc
+```
+
+### 过滤参数
+```
+GET /api/v1/games?status=active&player_count=4&created_after=2024-01-01
+```
+
+### 字段选择
+```
+GET /api/v1/games?fields=id,status,created_at
+```
+
+### 关联数据
+```
+GET /api/v1/games?include=players,statistics
+```
+
+## 数据验证规范
+
+### 输入验证
+```python
+# 使用Pydantic进行数据验证
+class CreateGameRequest(BaseModel):
+    player_count: int = Field(..., ge=2, le=4, description="玩家数量")
+    game_mode: str = Field(..., regex=r"^(standard|xuezhan)$", description="游戏模式")
+    settings: Optional[GameSettings] = Field(None, description="游戏设置")
+    
+    @validator('player_count')
+    def validate_player_count(cls, v):
+        if v not in [2, 3, 4]:
+            raise ValueError("玩家数量必须为2-4人")
+        return v
+```
+
+### 输出序列化
+```python
+class GameResponse(BaseModel):
+    game_id: str = Field(..., description="游戏ID")
+    status: GameStatus = Field(..., description="游戏状态")
+    players: List[PlayerInfo] = Field(..., description="玩家列表")
+    created_at: datetime = Field(..., description="创建时间")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "game_id": "game_123",
+                "status": "active",
+                "players": [],
+                "created_at": "2024-01-01T00:00:00Z"
+            }
+        }
+```
+
+## 错误处理规范
+
+### 全局异常处理
+```python
+# app/core/exceptions.py
+class MahjongException(Exception):
+    """业务异常基类"""
+    def __init__(self, message: str, code: int = 400):
+        self.message = message
+        self.code = code
+        super().__init__(message)
+
+class GameNotFoundException(MahjongException):
+    """游戏不存在异常"""
+    def __init__(self, game_id: str):
+        super().__init__(f"游戏 {game_id} 不存在", 404)
+
+class InvalidOperationException(MahjongException):
+    """无效操作异常"""
+    def __init__(self, operation: str):
+        super().__init__(f"无效操作: {operation}", 400)
+
+# 全局异常处理器
+@app.exception_handler(MahjongException)
+async def mahjong_exception_handler(request: Request, exc: MahjongException):
+    return JSONResponse(
+        status_code=exc.code,
+        content={
+            "success": False,
+            "data": None,
+            "message": exc.message,
+            "code": exc.code,
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+```
+
+### 验证错误处理
+```python
+@app.exception_handler(ValidationError)
+async def validation_exception_handler(request: Request, exc: ValidationError):
+    errors = []
+    for error in exc.errors():
+        errors.append({
+            "field": ".".join(str(x) for x in error["loc"]),
+            "code": error["type"],
+            "message": error["msg"]
+        })
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "success": False,
+            "data": None,
+            "message": "请求参数验证失败",
+            "code": 422,
+            "errors": errors,
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+```
+
+## 安全规范
+
+### 身份验证
+```python
+# JWT Token验证
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="无效的认证令牌")
+        return user_id
+    except JWTError:
+        raise HTTPException(status_code=401, detail="无效的认证令牌")
+```
+
+### 权限控制
+```python
+# 操作权限验证
+async def verify_game_permission(
+    game_id: str,
+    player_id: str,
+    operation: str
+):
+    game = await get_game(game_id)
+    if not game:
+        raise GameNotFoundException(game_id)
+    
+    if player_id not in [p.id for p in game.players]:
+        raise HTTPException(status_code=403, detail="无权限访问此游戏")
+    
+    if operation == "draw" and game.current_player != player_id:
+        raise HTTPException(status_code=403, detail="不是您的回合")
+```
+
+### 输入安全
+```python
+# 防止注入攻击的输入清理
+def sanitize_input(text: str) -> str:
+    """清理用户输入，防止XSS攻击"""
+    return html.escape(text.strip())
+
+# 限制请求频率
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host
+    
+    # 实现频率限制逻辑
+    if await is_rate_limited(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"message": "请求频率过高，请稍后重试"}
+        )
+    
+    response = await call_next(request)
+    return response
+```
+
+## 性能优化规范
+
+### 响应时间要求
+- **查询接口** - 响应时间 < 200ms
+- **操作接口** - 响应时间 < 500ms  
+- **分析接口** - 响应时间 < 1000ms
+- **批量接口** - 响应时间 < 2000ms
+
+### 缓存策略
+```python
+# Redis缓存装饰器
+from functools import wraps
+
+def cache_result(expiration: int = 300):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            cache_key = f"{func.__name__}:{hash(str(args) + str(kwargs))}"
+            
+            # 尝试从缓存获取
+            cached_result = await redis.get(cache_key)
+            if cached_result:
+                return json.loads(cached_result)
+            
+            # 执行函数
+            result = await func(*args, **kwargs)
+            
+            # 存储到缓存
+            await redis.setex(
+                cache_key, 
+                expiration, 
+                json.dumps(result, default=str)
+            )
+            
+            return result
+        return wrapper
+    return decorator
+
+# 使用示例
+@cache_result(expiration=600)
+async def get_game_analysis(game_id: str, player_id: str):
+    # 计算游戏分析结果
+    pass
+```
+
+### 并发处理
+```python
+# 异步并发处理
+async def analyze_multiple_games(game_ids: List[str]):
+    tasks = [analyze_game(game_id) for game_id in game_ids]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # 处理结果和异常
+    successful_results = []
+    errors = []
+    
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            errors.append({"game_id": game_ids[i], "error": str(result)})
+        else:
+            successful_results.append(result)
+    
+    return successful_results, errors
+```
+
+## 文档规范
+
+### OpenAPI文档配置
+```python
+app = FastAPI(
+    title="血战麻将 API",
+    description="智能血战麻将辅助分析工具API",
+    version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json"
+)
+
+# 标签分组
+tags_metadata = [
+    {
+        "name": "games",
+        "description": "游戏相关操作",
+    },
+    {
+        "name": "players", 
+        "description": "玩家相关操作",
+    },
+    {
+        "name": "analysis",
+        "description": "游戏分析功能",
+    }
+]
+
+app.openapi_tags = tags_metadata
+```
+
+### API文档注释
+```python
+@router.post(
+    "/games/{game_id}/draw",
+    response_model=ApiResponse[MahjongCard],
+    tags=["games"],
+    summary="摸牌操作",
+    description="玩家从牌库中摸一张牌",
+    responses={
+        200: {"description": "摸牌成功"},
+        400: {"description": "无效操作"},
+        404: {"description": "游戏不存在"},
+        403: {"description": "不是玩家回合"}
+    }
+)
+async def draw_card(
+    game_id: str = Path(..., description="游戏ID"),
+    player_id: str = Body(..., description="玩家ID"),
+    game_service: GameService = Depends(get_game_service)
+):
+    """
+    摸牌操作详细说明：
+    
+    1. 验证游戏存在且玩家有权限
+    2. 检查是否为玩家回合
+    3. 从牌库摸取一张牌
+    4. 更新游戏状态
+    5. 返回摸到的牌
+    """
+    return await game_service.draw_card(game_id, player_id)
+```
+
+## 测试规范
+
+### API测试用例
+```python
+# tests/test_api/test_game_api.py
+import pytest
+from fastapi.testclient import TestClient
+
+class TestGameAPI:
+    def test_create_game_success(self, client: TestClient):
+        """测试成功创建游戏"""
+        response = client.post("/api/v1/games", json={
+            "player_count": 4,
+            "game_mode": "xuezhan"
+        })
+        
+        assert response.status_code == 201
+        data = response.json()
+        assert data["success"] is True
+        assert "game_id" in data["data"]
+    
+    def test_create_game_invalid_player_count(self, client: TestClient):
+        """测试无效玩家数量"""
+        response = client.post("/api/v1/games", json={
+            "player_count": 5,
+            "game_mode": "xuezhan"
+        })
+        
+        assert response.status_code == 422
+        data = response.json()
+        assert data["success"] is False
+        assert "player_count" in str(data["errors"])
+    
+    def test_get_nonexistent_game(self, client: TestClient):
+        """测试获取不存在的游戏"""
+        response = client.get("/api/v1/games/nonexistent")
+        
+        assert response.status_code == 404
+        data = response.json()
+        assert data["success"] is False
+        assert "不存在" in data["message"]
+```
+
+### 集成测试
+```python
+# tests/test_integration/test_game_flow.py
+@pytest.mark.asyncio
+class TestGameFlow:
+    async def test_complete_game_flow(self, client: TestClient):
+        """测试完整游戏流程"""
+        # 1. 创建游戏
+        create_response = client.post("/api/v1/games", json={
+            "player_count": 4
+        })
+        game_id = create_response.json()["data"]["game_id"]
+        
+        # 2. 玩家摸牌
+        draw_response = client.post(f"/api/v1/games/{game_id}/draw", json={
+            "player_id": "player_0"
+        })
+        assert draw_response.status_code == 200
+        
+        # 3. 分析游戏
+        analyze_response = client.post(f"/api/v1/games/{game_id}/analyze", json={
+            "player_id": "player_0"
+        })
+        assert analyze_response.status_code == 200
+        
+        # 4. 玩家弃牌
+        card = draw_response.json()["data"]
+        discard_response = client.post(f"/api/v1/games/{game_id}/discard", json={
+            "player_id": "player_0",
+            "card": card
+        })
+        assert discard_response.status_code == 200
+```
+
+## 监控和日志规范
+
+### API监控指标
+- **响应时间** - 95%分位数响应时间
+- **QPS** - 每秒请求数
+- **错误率** - 4xx和5xx错误比例
+- **可用性** - 服务可用性百分比
+
+### 日志格式
+```python
+import logging
+import json
+from datetime import datetime
+
+class APILogger:
+    def __init__(self):
+        self.logger = logging.getLogger("api")
+    
+    def log_request(self, request, response, duration):
+        log_data = {
+            "timestamp": datetime.now().isoformat(),
+            "method": request.method,
+            "url": str(request.url),
+            "status_code": response.status_code,
+            "duration_ms": duration * 1000,
+            "user_agent": request.headers.get("user-agent"),
+            "client_ip": request.client.host,
+            "request_id": request.headers.get("x-request-id")
+        }
+        
+        self.logger.info(json.dumps(log_data))
+```
+
+通过以上API标准规范，确保血战麻将项目的API设计统一、规范、安全、高效，便于维护和扩展。 

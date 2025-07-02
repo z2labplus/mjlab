@@ -1,0 +1,74 @@
+/* 当前玩家闪亮边框动画 */
+@keyframes currentPlayerGlow {
+  0% {
+    border-color: #fb923c; /* orange-400 */
+    box-shadow: 0 0 5px rgba(251, 146, 60, 0.3);
+  }
+  50% {
+    border-color: #f97316; /* orange-500 */
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.6), 0 0 30px rgba(249, 115, 22, 0.4);
+    transform: scale(1.01);
+  }
+  100% {
+    border-color: #fb923c; /* orange-400 */
+    box-shadow: 0 0 5px rgba(251, 146, 60, 0.3);
+  }
+}
+
+@keyframes currentPlayerPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* 当前玩家的特殊样式类 */
+.current-player-glow {
+  animation: currentPlayerGlow 2s ease-in-out infinite;
+  border-width: 3px !important;
+  position: relative;
+  overflow: visible;
+}
+
+.current-player-glow::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #f97316, #fb923c, #fdba74, #fb923c);
+  border-radius: inherit;
+  z-index: -1;
+  animation: currentPlayerPulse 2s ease-in-out infinite;
+  opacity: 0.3;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .current-player-glow {
+    animation-duration: 1.5s;
+  }
+  
+  .current-player-glow::before {
+    animation-duration: 1.5s;
+  }
+}
+
+/* 当前玩家指示器闪烁 */
+@keyframes currentPlayerIndicator {
+  0%, 100% {
+    background-color: #fb923c;
+    transform: scale(1);
+  }
+  50% {
+    background-color: #f97316;
+    transform: scale(1.1);
+  }
+}
+
+.current-player-indicator {
+  animation: currentPlayerIndicator 1s ease-in-out infinite;
+} 

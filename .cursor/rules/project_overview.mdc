@@ -1,0 +1,82 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 血战麻将项目规则 - 项目概览
+
+## 项目简介
+这是一个智能血战麻将辅助分析工具，采用前后端分离架构，帮助玩家进行最优决策分析。
+
+# 血战麻将项目规则 - 项目概览
+
+## 项目简介
+这是一个智能血战麻将辅助分析工具，采用前后端分离架构，帮助玩家进行最优决策分析。
+
+## 技术栈
+
+### 前端技术栈
+- **React 18** + **TypeScript** - 主要UI框架和类型系统
+- **Tailwind CSS** - 实用优先的CSS框架，用于快速样式开发
+- **Zustand** - 轻量级状态管理库
+- **Framer Motion** - 动画效果库，提供流畅的用户交互
+- **React Query** - 数据获取、缓存和同步
+- **Axios** - HTTP客户端，用于API调用
+- **Classnames** - 条件类名工具
+
+### 后端技术栈
+- **Python 3.11+** - 主要编程语言
+- **FastAPI** - 现代化、高性能Web框架
+- **Redis** - 内存数据库，用于缓存和会话管理
+- **Pydantic** - 数据验证和序列化
+- **WebSocket** - 实时通信支持
+- **NumPy** - 数值计算库，用于概率计算
+- **Uvicorn** - ASGI服务器
+
+### 开发工具
+- **ESLint** + **TypeScript** - 代码质量保证
+- **Jest** + **Pytest** - 单元测试框架
+- **Cross-env** - 跨平台环境变量设置
+
+## 项目结构
+```
+项目根目录/
+├── frontend/              # React前端应用
+│   ├── src/
+│   │   ├── components/    # React组件
+│   │   ├── hooks/         # 自定义Hooks
+│   │   ├── stores/        # Zustand状态管理
+│   │   ├── types/         # TypeScript类型定义
+│   │   ├── utils/         # 工具函数
+│   │   └── assets/        # 静态资源
+│   └── package.json
+├── backend/               # Python后端应用
+│   ├── app/
+│   │   ├── api/          # API路由
+│   │   ├── core/         # 核心配置
+│   │   ├── models/       # 数据模型
+│   │   ├── services/     # 业务逻辑
+│   │   └── algorithms/   # 麻将算法引擎
+│   ├── tests/
+│   └── requirements.txt
+├── .cursor/
+│   ├── rules/            # 项目规则文档
+│   └── docs/             # 设计文档
+└── README.md
+```
+
+## 核心功能模块
+1. **麻将牌型识别与分析**
+2. **智能弃牌建议系统**
+3. **剩余牌计算引擎**
+4. **胡牌概率分析**
+5. **实时游戏状态管理**
+6. **用户界面交互系统**
+
+## 架构特点
+- **前后端分离** - 独立开发和部署
+- **实时通信** - WebSocket支持实时数据同步
+- **缓存优化** - Redis提供高性能缓存
+- **类型安全** - TypeScript确保代码质量
+- **响应式设计** - 适配多种设备尺寸
+- **模块化架构** - 便于维护和扩展 

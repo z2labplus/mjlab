@@ -1,0 +1,437 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 血战麻将项目规则 - 前端开发规范
+
+## 技术栈要求
+
+### 核心框架
+- **React 18** - 使用函数组件和Hooks模式
+- **TypeScript** - 严格类型检查，确保代码质量
+- **Tailwind CSS** - 原子类CSS框架，快速样式开发
+
+### 状态管理
+- **Zustand** - 轻量级状态管理，替代Redux
+- **React Query** - 服务端状态管理，处理API调用和缓存
+
+### 动画和交互
+- **Framer Motion** - 流畅动画效果
+- **Classnames** - 条件类名管理
+
+## 项目结构规范
+
+```
+frontend/src/
+├── components/           # React组件
+│   ├── ui/              # 基础UI组件
+│   ├── game/            # 游戏相关组件
+│   ├── layout/          # 布局组件
+│   └── common/          # 通用组件
+├── hooks/               # 自定义Hooks
+│   ├── useGameState.ts  # 游戏状态Hook
+│   ├── useWebSocket.ts  # WebSocket连接Hook
+│   └── useMahjong.ts    # 麻将逻辑Hook
+├── stores/              # Zustand状态存储
+│   ├── gameStore.ts     # 游戏状态存储
+│   ├── userStore.ts     # 用户状态存储
+│   └── settingsStore.ts # 设置状态存储
+├── types/               # TypeScript类型定义
+│   ├── game.ts          # 游戏相关类型
+│   ├── api.ts           # API接口类型
+│   └── common.ts        # 通用类型
+├── utils/               # 工具函数
+│   ├── mahjongUtils.ts  # 麻将工具函数
+│   ├── apiClient.ts     # API客户端
+│   └── constants.ts     # 常量定义
+└── assets/              # 静态资源
+    ├── images/          # 麻将牌图片
+    └── icons/           # 图标资源
+```
+
+## 代码规范
+
+### TypeScript规范
+
+#### 1. 类型定义
+```typescript
+// 严格定义接口，避免any类型
+interface MahjongCard {
+  id: number;
+  suit: 'wan' | 'tiao' | 'tong';
+  value: number;
+  isSelected?: boolean;
+}
+
+interface GameState {
+  players: Player[];
+  currentPlayer: number;
+  deck: MahjongCard[];
+  discardPile: MahjongCard[];
+}
+
+// 使用泛型提高代码复用性
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+```
+
+#### 2. Props类型定义
+```typescript
+interface MahjongCardProps {
+  card: MahjongCard;
+  isClickable?: boolean;
+  onCardClick?: (card: MahjongCard) => void;
+  className?: string;
+}
+
+// 使用React.FC类型
+const MahjongCardComponent: React.FC<MahjongCardProps> = ({
+  card,
+  isClickable = true,
+  onCardClick,
+  className
+}) => {
+  // 组件实现
+};
+```
+
+### React组件规范
+
+#### 1. 函数组件结构
+```typescript
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import classNames from 'classnames';
+
+interface ComponentProps {
+  // props定义
+}
+
+const Component: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
+  // 1. State定义
+  const [state, setState] = useState<StateType>(initialState);
+  
+  // 2. 自定义Hooks
+  const { gameState, updateGameState } = useGameState();
+  
+  // 3. 副作用
+  useEffect(() => {
+    // 副作用逻辑
+  }, [dependencies]);
+  
+  // 4. 事件处理函数
+  const handleClick = useCallback((event: React.MouseEvent) => {
+    // 事件处理逻辑
+  }, [dependencies]);
+  
+  // 5. 渲染逻辑
+  return (
+    <motion.div
+      className={classNames('base-class', {
+        'conditional-class': condition
+      })}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* JSX内容 */}
+    </motion.div>
+  );
+};
+
+export default Component;
+```
+
+#### 2. 组件命名规范
+- 组件文件使用PascalCase：`MahjongCard.tsx`
+- 组件名与文件名保持一致
+- Props接口命名：组件名 + Props
+
+### Hooks使用规范
+
+#### 1. 自定义Hooks
+```typescript
+// hooks/useGameState.ts
+import { useCallback } from 'react';
+import { useStore } from '../stores/gameStore';
+
+export const useGameState = () => {
+  const {
+    gameState,
+    players,
+    currentPlayer,
+    updateGameState,
+    addPlayer,
+    removePlayer
+  } = useStore();
+
+  const drawCard = useCallback(() => {
+    // 摸牌逻辑
+  }, [gameState]);
+
+  const discardCard = useCallback((card: MahjongCard) => {
+    // 弃牌逻辑
+  }, [gameState]);
+
+  return {
+    gameState,
+    players,
+    currentPlayer,
+    actions: {
+      drawCard,
+      discardCard,
+      updateGameState
+    }
+  };
+};
+```
+
+#### 2. WebSocket Hook
+```typescript
+// hooks/useWebSocket.ts
+import { useEffect, useCallback, useRef } from 'react';
+
+export const useWebSocket = (url: string) => {
+  const ws = useRef<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  const sendMessage = useCallback((message: any) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify(message));
+    }
+  }, []);
+
+  useEffect(() => {
+    ws.current = new WebSocket(url);
+    
+    ws.current.onopen = () => setIsConnected(true);
+    ws.current.onclose = () => setIsConnected(false);
+    
+    return () => {
+      ws.current?.close();
+    };
+  }, [url]);
+
+  return { isConnected, sendMessage };
+};
+```
+
+### 样式规范
+
+#### 1. Tailwind CSS使用
+```typescript
+// 使用Tailwind原子类
+const cardClasses = classNames(
+  // 基础样式
+  'w-16 h-24 border-2 rounded-lg cursor-pointer transition-all duration-200',
+  // 条件样式
+  {
+    'border-blue-500 shadow-lg': isSelected,
+    'border-gray-300 hover:border-gray-400': !isSelected,
+    'opacity-50 cursor-not-allowed': isDisabled
+  }
+);
+```
+
+#### 2. 动画规范
+```typescript
+// 使用Framer Motion
+const cardVariants = {
+  initial: { scale: 0.8, opacity: 0 },
+  animate: { scale: 1, opacity: 1 },
+  hover: { scale: 1.05 },
+  tap: { scale: 0.95 }
+};
+
+<motion.div
+  variants={cardVariants}
+  initial="initial"
+  animate="animate"
+  whileHover="hover"
+  whileTap="tap"
+  transition={{ type: "spring", stiffness: 300 }}
+>
+  {/* 卡牌内容 */}
+</motion.div>
+```
+
+### 状态管理规范
+
+#### 1. Zustand Store
+```typescript
+// stores/gameStore.ts
+import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
+
+interface GameStore {
+  gameState: GameState;
+  players: Player[];
+  actions: {
+    updateGameState: (newState: Partial<GameState>) => void;
+    addPlayer: (player: Player) => void;
+    removePlayer: (playerId: string) => void;
+  };
+}
+
+export const useGameStore = create<GameStore>()(
+  subscribeWithSelector((set, get) => ({
+    gameState: initialGameState,
+    players: [],
+    actions: {
+      updateGameState: (newState) =>
+        set((state) => ({
+          gameState: { ...state.gameState, ...newState }
+        })),
+      
+      addPlayer: (player) =>
+        set((state) => ({
+          players: [...state.players, player]
+        })),
+      
+      removePlayer: (playerId) =>
+        set((state) => ({
+          players: state.players.filter(p => p.id !== playerId)
+        }))
+    }
+  }))
+);
+```
+
+### 性能优化规范
+
+#### 1. React.memo使用
+```typescript
+// 对不频繁更新的组件使用memo
+const MahjongCard = React.memo<MahjongCardProps>(({ card, onCardClick }) => {
+  return (
+    <div onClick={() => onCardClick?.(card)}>
+      {/* 卡牌内容 */}
+    </div>
+  );
+});
+```
+
+#### 2. useMemo和useCallback
+```typescript
+// 对计算密集的操作使用useMemo
+const availableMoves = useMemo(() => {
+  return calculateAvailableMoves(gameState, currentPlayer);
+}, [gameState, currentPlayer]);
+
+// 对事件处理函数使用useCallback
+const handleCardClick = useCallback((card: MahjongCard) => {
+  // 处理逻辑
+}, [gameState]);
+```
+
+### 错误处理规范
+
+#### 1. Error Boundary
+```typescript
+// components/common/ErrorBoundary.tsx
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Game error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div>游戏出现错误，请刷新页面重试</div>;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+#### 2. API错误处理
+```typescript
+// utils/apiClient.ts
+import axios from 'axios';
+
+const apiClient = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL,
+  timeout: 10000,
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // 统一错误处理
+    console.error('API Error:', error);
+    return Promise.reject(error);
+  }
+);
+```
+
+### 测试规范
+
+#### 1. 组件测试
+```typescript
+// __tests__/MahjongCard.test.tsx
+import { render, fireEvent, screen } from '@testing-library/react';
+import MahjongCard from '../components/game/MahjongCard';
+
+describe('MahjongCard', () => {
+  const mockCard = {
+    id: 1,
+    suit: 'wan' as const,
+    value: 5
+  };
+
+  it('renders card correctly', () => {
+    render(<MahjongCard card={mockCard} />);
+    expect(screen.getByText('5万')).toBeInTheDocument();
+  });
+
+  it('handles click events', () => {
+    const onCardClick = jest.fn();
+    render(<MahjongCard card={mockCard} onCardClick={onCardClick} />);
+    
+    fireEvent.click(screen.getByRole('button'));
+    expect(onCardClick).toHaveBeenCalledWith(mockCard);
+  });
+});
+```
+
+## 开发工作流
+
+### 1. 代码提交规范
+```bash
+# 提交信息格式
+feat: 添加麻将牌组件
+fix: 修复胡牌判断逻辑错误
+style: 优化卡牌样式
+refactor: 重构游戏状态管理
+test: 添加组件单元测试
+docs: 更新开发文档
+```
+
+### 2. 分支管理
+- `main` - 主分支，稳定版本
+- `develop` - 开发分支
+- `feature/功能名` - 功能开发分支
+- `fix/bug描述` - Bug修复分支
+
+### 3. 代码审查要点
+- TypeScript类型检查通过
+- 组件逻辑清晰，职责单一
+- 样式符合设计规范
+- 性能优化适当
+- 测试覆盖核心逻辑 

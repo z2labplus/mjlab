@@ -1,0 +1,305 @@
+{
+  "game_info": {
+    "game_id": "sample_game_8e683015",
+    "start_time": "2025-06-15T03:54:04.677619",
+    "end_time": "2025-06-15T04:24:06.030905",
+    "duration": 1801,
+    "player_count": 4,
+    "game_mode": "xuezhan_daodi"
+  },
+  "players": [
+    {
+      "id": 0,
+      "name": "张三",
+      "position": 0,
+      "initial_hand": [
+        "1万",
+        "1万",
+        "2万",
+        "3万",
+        "2条",
+        "3条",
+        "4条",
+        "5条",
+        "5筒",
+        "6筒",
+        "7筒",
+        "8筒",
+        "9筒"
+      ],
+      "missing_suit": "tong",
+      "final_score": 100,
+      "is_winner": true,
+      "statistics": {
+        "draw_count": 1,
+        "discard_count": 2,
+        "peng_count": 0,
+        "gang_count": 0
+      }
+    },
+    {
+      "id": 1,
+      "name": "李四",
+      "position": 1,
+      "initial_hand": [
+        "4万",
+        "5万",
+        "6万",
+        "7万",
+        "1条",
+        "1条",
+        "6条",
+        "7条",
+        "8条",
+        "1筒",
+        "2筒",
+        "3筒",
+        "4筒"
+      ],
+      "missing_suit": "wan",
+      "final_score": -30,
+      "is_winner": false,
+      "statistics": {
+        "draw_count": 1,
+        "discard_count": 1,
+        "peng_count": 1,
+        "gang_count": 0
+      }
+    },
+    {
+      "id": 2,
+      "name": "王五",
+      "position": 2,
+      "initial_hand": [
+        "8万",
+        "8万",
+        "8万",
+        "9万",
+        "9条",
+        "9条",
+        "9条",
+        "1筒",
+        "2筒",
+        "3筒",
+        "4筒",
+        "5筒",
+        "6筒"
+      ],
+      "missing_suit": "tiao",
+      "final_score": -40,
+      "is_winner": false,
+      "statistics": {
+        "draw_count": 1,
+        "discard_count": 1,
+        "peng_count": 0,
+        "gang_count": 2
+      }
+    },
+    {
+      "id": 3,
+      "name": "赵六",
+      "position": 3,
+      "initial_hand": [
+        "2万",
+        "3万",
+        "4万",
+        "5万",
+        "6万",
+        "2条",
+        "3条",
+        "4条",
+        "7条",
+        "8条",
+        "7筒",
+        "8筒",
+        "9筒"
+      ],
+      "missing_suit": "tong",
+      "final_score": -30,
+      "is_winner": false,
+      "statistics": {
+        "draw_count": 1,
+        "discard_count": 1,
+        "peng_count": 0,
+        "gang_count": 0
+      }
+    }
+  ],
+  "actions": [
+    {
+      "sequence": 1,
+      "timestamp": "2025-06-15T04:24:04.706642",
+      "player_id": 0,
+      "action_type": "missing_suit",
+      "card": null,
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 2,
+      "timestamp": "2025-06-15T04:24:04.810988",
+      "player_id": 1,
+      "action_type": "missing_suit",
+      "card": null,
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 3,
+      "timestamp": "2025-06-15T04:24:04.920755",
+      "player_id": 2,
+      "action_type": "missing_suit",
+      "card": null,
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 4,
+      "timestamp": "2025-06-15T04:24:05.030398",
+      "player_id": 3,
+      "action_type": "missing_suit",
+      "card": null,
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 5,
+      "timestamp": "2025-06-15T04:24:05.140634",
+      "player_id": 0,
+      "action_type": "draw",
+      "card": "4万",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 6,
+      "timestamp": "2025-06-15T04:24:05.261025",
+      "player_id": 0,
+      "action_type": "discard",
+      "card": "4万",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 7,
+      "timestamp": "2025-06-15T04:24:05.370893",
+      "player_id": 1,
+      "action_type": "draw",
+      "card": "9万",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 8,
+      "timestamp": "2025-06-15T04:24:05.480849",
+      "player_id": 1,
+      "action_type": "discard",
+      "card": "9万",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 9,
+      "timestamp": "2025-06-15T04:24:05.590743",
+      "player_id": 2,
+      "action_type": "draw",
+      "card": "1条",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 10,
+      "timestamp": "2025-06-15T04:24:05.700772",
+      "player_id": 2,
+      "action_type": "discard",
+      "card": "9万",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 11,
+      "timestamp": "2025-06-15T04:24:05.810693",
+      "player_id": 3,
+      "action_type": "draw",
+      "card": "7万",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 12,
+      "timestamp": "2025-06-15T04:24:05.921193",
+      "player_id": 3,
+      "action_type": "discard",
+      "card": "8条",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 13,
+      "timestamp": "2025-06-15T04:24:06.030905",
+      "player_id": 0,
+      "action_type": "discard",
+      "card": "4条",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 14,
+      "timestamp": "2025-06-15T04:24:06.030905",
+      "player_id": 1,
+      "action_type": "peng",
+      "card": "4条",
+      "target_player": 0,
+      "gang_type": null,
+      "score_change": 0
+    },
+    {
+      "sequence": 15,
+      "timestamp": "2025-06-15T04:24:06.030905",
+      "player_id": 2,
+      "action_type": "gang",
+      "card": "8万",
+      "target_player": null,
+      "gang_type": "an_gang",
+      "score_change": 0
+    },
+    {
+      "sequence": 16,
+      "timestamp": "2025-06-15T04:24:06.030905",
+      "player_id": 2,
+      "action_type": "gang",
+      "card": "9条",
+      "target_player": null,
+      "gang_type": "an_gang",
+      "score_change": 0
+    },
+    {
+      "sequence": 17,
+      "timestamp": "2025-06-15T04:24:06.030905",
+      "player_id": 0,
+      "action_type": "hu",
+      "card": "8筒",
+      "target_player": null,
+      "gang_type": null,
+      "score_change": 100
+    }
+  ],
+  "metadata": {
+    "generated_at": "2025-06-15T04:24:06.030905",
+    "version": "1.0",
+    "format": "xuezhan_mahjong"
+  }
+}

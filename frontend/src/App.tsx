@@ -117,11 +117,13 @@ function App() {
             
             // 如果这个胜利者还没有显示过通知
             if (!currentShownWinners.has(winnerId)) {
+              console.log('🎯 准备设置胜利者消息:', winner);
               setPlayerWinMessage(winner);
               setShownWinners(prev => new Set(prev).add(winnerId)); // 标记为已显示
               console.log('🏆 显示新胜利者通知:', winner);
               console.log(`🏆 胜利详情: 玩家${winner.player_id} ${winner.win_type === 'zimo' ? '自摸' : '点炮胡牌'} ${winner.win_tile ? `${winner.win_tile.value}${suitNames[winner.win_tile.type as keyof typeof suitNames]}` : ''}`);
               console.log('🏆 更新后的已显示记录:', Array.from(new Set(currentShownWinners).add(winnerId)));
+              console.log('🎯 setPlayerWinMessage 已调用');
               break; // 一次只显示一个胜利者
             } else {
               console.log(`⏭️ 跳过已显示的胜利者: ${winnerId}`);
@@ -327,7 +329,15 @@ function App() {
 
       {/* 胜利通知 */}
       <AnimatePresence>
-        {showWinNotification && playerWinMessage && (
+        {(() => {
+          console.log('🎭 胜利通知渲染检查:', {
+            showWinNotification,
+            hasPlayerWinMessage: !!playerWinMessage,
+            playerWinMessage,
+            shouldRender: showWinNotification && playerWinMessage
+          });
+          return showWinNotification && playerWinMessage;
+        })() && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: -100 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -341,16 +351,28 @@ function App() {
                   <div className="text-4xl animate-bounce">🎉</div>
                   <div>
                     <h3 className="text-xl font-bold mb-1">
-                      {playerNames[playerWinMessage.player_id as keyof typeof playerNames]}胡牌！
+                      {(() => {
+                        const playerName = playerNames[playerWinMessage.player_id as keyof typeof playerNames];
+                        console.log('🎭 渲染胜利者名称:', playerWinMessage.player_id, '->', playerName);
+                        return playerName;
+                      })()}胡牌！
                     </h3>
                     <div className="text-lg">
-                      {playerWinMessage.win_type === 'zimo' ? (
+                      {(() => {
+                        console.log('🎭 渲染胜利类型:', playerWinMessage.win_type);
+                        console.log('🎭 胜利牌数据:', playerWinMessage.win_tile);
+                        return playerWinMessage.win_type === 'zimo';
+                      })() ? (
                         <span className="flex items-center gap-2">
                           <span className="text-2xl">🙌</span>
                           自摸
                           {playerWinMessage.win_tile && (
                             <span className="bg-white text-orange-600 px-2 py-1 rounded-lg font-bold ml-1">
-                              {playerWinMessage.win_tile.value}{suitNames[playerWinMessage.win_tile.type as keyof typeof suitNames]}
+                              {(() => {
+                                const tileText = `${playerWinMessage.win_tile.value}${suitNames[playerWinMessage.win_tile.type as keyof typeof suitNames]}`;
+                                console.log('🎭 渲染自摸牌:', tileText);
+                                return tileText;
+                              })()}
                             </span>
                           )}
                         </span>
@@ -360,12 +382,20 @@ function App() {
                           点炮胡牌
                           {playerWinMessage.win_tile && (
                             <span className="bg-white text-orange-600 px-2 py-1 rounded-lg font-bold ml-1">
-                              {playerWinMessage.win_tile.value}{suitNames[playerWinMessage.win_tile.type as keyof typeof suitNames]}
+                              {(() => {
+                                const tileText = `${playerWinMessage.win_tile.value}${suitNames[playerWinMessage.win_tile.type as keyof typeof suitNames]}`;
+                                console.log('🎭 渲染点炮牌:', tileText);
+                                return tileText;
+                              })()}
                             </span>
                           )}
                           {playerWinMessage.dianpao_player_id !== undefined && (
                             <span className="text-sm">
-                              (点炮者: {playerNames[playerWinMessage.dianpao_player_id as keyof typeof playerNames]})
+                              (点炮者: {(() => {
+                                const dianpaoName = playerNames[playerWinMessage.dianpao_player_id as keyof typeof playerNames];
+                                console.log('🎭 渲染点炮者:', playerWinMessage.dianpao_player_id, '->', dianpaoName);
+                                return dianpaoName;
+                              })()})
                             </span>
                           )}
                         </span>

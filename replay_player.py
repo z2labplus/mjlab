@@ -193,6 +193,25 @@ class ReplayPlayer:
         else:
             raise ValueError(f"未知的牌类型: {tile}")
     
+    def set_current_player(self, player_id: int) -> bool:
+        """设置当前轮到操作的玩家"""
+        try:
+            response = self.session.post(
+                f"{self.api_base_url}/set-current-player",
+                params={"player_id": player_id}
+            )
+            result = response.json()
+            if result.get('success'):
+                player_names = {0: "我", 1: "下家", 2: "对家", 3: "上家"}
+                print(f"🎯 当前玩家切换为: {player_names.get(player_id, f'玩家{player_id}')}")
+                return True
+            else:
+                print(f"❌ 设置当前玩家失败: {result.get('message', '未知错误')}")
+                return False
+        except Exception as e:
+            print(f"❌ 设置当前玩家失败: {e}")
+            return False
+    
     def set_complete_final_state_from_replay(self, replay_data: dict) -> bool:
         """从牌谱数据中设置完整的最终状态（手牌+碰杠牌+胜利状态）"""
         try:
@@ -703,6 +722,9 @@ class ReplayPlayer:
             if not success:
                 print(f"❌ 操作失败，停止播放")
                 return False
+            
+            # 🔧 重要修复：每次操作后更新当前玩家，确保前端高亮正确的玩家区域
+            self.set_current_player(player_id)
             
             # 更新前一个操作
             previous_action = action

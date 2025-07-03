@@ -109,26 +109,58 @@ class DiscardAnalysis:
         return f"进张后向听数减少到{TingValidator.calculate_shanten(test_tiles)}"
     
     def _analyze_possible_melds(self) -> List[str]:
-        """分析可能的面子组合"""
+        """分析可能的面子组合（正确处理牌的使用）"""
         tiles_array = TilesConverter.tiles_to_27_array(self.remaining_tiles)
         melds = []
+        used_tiles = [0] * 27  # 跟踪已使用的牌
         
-        # 寻找已经形成的面子
+        # 优先识别刻子
         for i in range(27):
-            if tiles_array[i] >= 3:
+            available = tiles_array[i] - used_tiles[i]
+            if available >= 3:
                 tile = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
-                melds.append(f"刻子:{tile}")
-            elif tiles_array[i] >= 2:
+                # 计算可以组成多少个刻子
+                kotsu_count = available // 3
+                for _ in range(kotsu_count):
+                    melds.append(f"刻子:{tile}")
+                    used_tiles[i] += 3
+        
+        # 然后识别顺子
+        for i in range(27):
+            # 检查顺子（不能跨花色）
+            if (i % 9 <= 6 and i + 2 < 27):
+                while (tiles_array[i] - used_tiles[i] >= 1 and
+                       tiles_array[i + 1] - used_tiles[i + 1] >= 1 and
+                       tiles_array[i + 2] - used_tiles[i + 2] >= 1):
+                    
+                    tile1 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
+                    tile2 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 2)
+                    tile3 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 3)
+                    melds.append(f"顺子:{tile1}{tile2}{tile3}")
+                    
+                    # 标记为已使用
+                    used_tiles[i] += 1
+                    used_tiles[i + 1] += 1
+                    used_tiles[i + 2] += 1
+        
+        # 最后识别对子
+        for i in range(27):
+            available = tiles_array[i] - used_tiles[i]
+            if available >= 2:
                 tile = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
-                melds.append(f"对子:{tile}")
-            
-            # 检查顺子
-            if (i % 9 <= 6 and i + 2 < 27 and
-                tiles_array[i] >= 1 and tiles_array[i + 1] >= 1 and tiles_array[i + 2] >= 1):
-                tile1 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
-                tile2 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 2)
-                tile3 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 3)
-                melds.append(f"顺子:{tile1}{tile2}{tile3}")
+                # 计算可以组成多少个对子
+                pair_count = available // 2
+                for _ in range(pair_count):
+                    melds.append(f"对子:{tile}")
+                    used_tiles[i] += 2
+        
+        # 显示剩余单张
+        for i in range(27):
+            remaining = tiles_array[i] - used_tiles[i]
+            if remaining > 0:
+                tile = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
+                for _ in range(remaining):
+                    melds.append(f"单张:{tile}")
         
         return melds
     

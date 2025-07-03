@@ -384,6 +384,30 @@ class ReplayPlayer:
             # 🔧 关键修复：设置游戏结束标志，确保前端显示所有玩家手牌
             game_state['game_ended'] = True
             game_state['show_all_hands'] = True
+            
+            # 🔧 重要修复：设置当前玩家为胜利者，确保前端高亮正确的玩家区域
+            # 找到胜利的玩家，设置为当前玩家
+            winner_player_id = None
+            for player_id_str, final_hand_data in final_hands.items():
+                if 'self_win_tile' in final_hand_data or 'pao_tile' in final_hand_data:
+                    winner_player_id = int(player_id_str)
+                    break
+            
+            # 如果找到胜利者，设置为当前玩家；否则根据actions设置最后操作的玩家
+            if winner_player_id is not None:
+                game_state['current_player'] = winner_player_id
+                print(f"🎯 设置当前玩家为胜利者: 玩家{winner_player_id}")
+            elif 'actions' in replay_data and replay_data['actions']:
+                # 找到最后一个action的玩家
+                last_action = replay_data['actions'][-1]
+                last_player_id = last_action.get('player_id', 0)
+                game_state['current_player'] = last_player_id
+                print(f"🎯 设置当前玩家为最后操作者: 玩家{last_player_id}")
+            else:
+                # 默认设置为玩家0
+                game_state['current_player'] = 0
+                print("🎯 默认设置当前玩家为: 玩家0")
+            
             print("🎯 设置游戏结束标志: game_ended=True, show_all_hands=True")
             
             # 📊 详细调试：打印最终游戏状态

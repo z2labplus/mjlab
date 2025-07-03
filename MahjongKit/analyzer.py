@@ -39,6 +39,99 @@ class DiscardAnalysis:
         
         return len(effective_tiles) * 4
     
+    def get_detailed_analysis(self, remaining_tiles_count: Dict[str, int] = None) -> Dict[str, Any]:
+        """获取详细分析信息"""
+        if remaining_tiles_count is None:
+            remaining_tiles_count = {}
+        
+        analysis = {
+            "discard_tile": str(self.discard_tile),
+            "shanten": self.shanten,
+            "winning_tiles": [str(tile) for tile in self.winning_tiles],
+            "winning_tiles_detail": {},
+            "effective_tiles": [],
+            "meld_analysis": self._analyze_possible_melds()
+        }
+        
+        # 详细分析胡牌张
+        if self.winning_tiles:
+            for tile in self.winning_tiles:
+                tile_str = str(tile)
+                remaining = remaining_tiles_count.get(tile_str, 4)
+                analysis["winning_tiles_detail"][tile_str] = {
+                    "remaining_count": remaining,
+                    "reason": self._get_winning_reason(tile)
+                }
+        
+        # 分析有效进张
+        if self.shanten > 0:
+            for suit in SuitType:
+                for value in range(1, 10):
+                    test_tile = Tile(suit, value)
+                    test_tiles = self.remaining_tiles + [test_tile]
+                    new_shanten = TingValidator.calculate_shanten(test_tiles)
+                    if new_shanten < self.shanten:
+                        tile_str = str(test_tile)
+                        remaining = remaining_tiles_count.get(tile_str, 4)
+                        analysis["effective_tiles"].append({
+                            "tile": tile_str,
+                            "remaining_count": remaining,
+                            "new_shanten": new_shanten,
+                            "reason": self._get_effective_reason(test_tile)
+                        })
+        
+        return analysis
+    
+    def _get_winning_reason(self, winning_tile: Tile) -> str:
+        """获取胡牌理由"""
+        # 模拟加入胡牌张后的手牌
+        test_tiles = self.remaining_tiles + [winning_tile]
+        
+        # 分析胡牌形式
+        tiles_array = TilesConverter.tiles_to_27_array(test_tiles)
+        
+        # 检查是否为七对
+        if WinValidator._is_seven_pairs(tiles_array):
+            return "七对"
+        
+        # 检查标准胡牌
+        if WinValidator._is_standard_win(tiles_array):
+            return "标准胡牌"
+        
+        return "未知胡牌形式"
+    
+    def _get_effective_reason(self, effective_tile: Tile) -> str:
+        """获取有效进张理由"""
+        # 模拟加入进张后的手牌
+        test_tiles = self.remaining_tiles + [effective_tile]
+        
+        # 分析进张后能组成的面子
+        return f"进张后向听数减少到{TingValidator.calculate_shanten(test_tiles)}"
+    
+    def _analyze_possible_melds(self) -> List[str]:
+        """分析可能的面子组合"""
+        tiles_array = TilesConverter.tiles_to_27_array(self.remaining_tiles)
+        melds = []
+        
+        # 寻找已经形成的面子
+        for i in range(27):
+            if tiles_array[i] >= 3:
+                tile = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
+                melds.append(f"刻子:{tile}")
+            elif tiles_array[i] >= 2:
+                tile = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
+                melds.append(f"对子:{tile}")
+            
+            # 检查顺子
+            if (i % 9 <= 6 and i + 2 < 27 and
+                tiles_array[i] >= 1 and tiles_array[i + 1] >= 1 and tiles_array[i + 2] >= 1):
+                tile1 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 1)
+                tile2 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 2)
+                tile3 = Tile(SuitType(['m', 's', 'p'][i // 9]), (i % 9) + 3)
+                melds.append(f"顺子:{tile1}{tile2}{tile3}")
+        
+        return melds
+    
     def _calculate_score(self) -> float:
         """计算弃牌选择的综合得分"""
         if self.shanten == 0:
@@ -60,13 +153,15 @@ class HandAnalyzer:
     """手牌分析器 - 提供最优出牌建议"""
     
     @staticmethod
-    def analyze_discard_options(tiles: List[Tile], melds: List = None) -> List[DiscardAnalysis]:
+    def analyze_discard_options(tiles: List[Tile], melds: List = None, remaining_tiles_count: Dict[str, int] = None) -> List[DiscardAnalysis]:
         """
         分析所有弃牌选择
         返回按得分排序的弃牌分析结果
         """
         if melds is None:
             melds = []
+        if remaining_tiles_count is None:
+            remaining_tiles_count = {}
         
         analyses = []
         

@@ -89,41 +89,41 @@ function App() {
         // 定期从API同步游戏状态
         await syncGameStateFromAPI();
         
-        // 检查胜利者
-        const winners = checkForWinners();
+        // // 检查胜利者
+        // const winners = checkForWinners();
         
-        if (winners.length > 0) {
-          // 生成所有胜利者的标识字符串
-          const allWinnerIds = winners.map(w => `${w.player_id}-${w.win_type}`).join(',');
+        // if (winners.length > 0) {
+        //   // 生成所有胜利者的标识字符串
+        //   const allWinnerIds = winners.map(w => `${w.player_id}-${w.win_type}`).join(',');
           
-          // 如果胜利者列表发生变化，重置显示索引和通知状态
-          if (allWinnerIds !== lastWinnerCheck) {
-            setDisplayedWinnerIndex(0);
-            setLastWinnerCheck(allWinnerIds);
-            setNotificationShown(false); // 重置通知状态，允许显示新的通知
-            console.log('🏆 检测到胜利者变化，重置显示:', winners);
-          }
+        //   // 如果胜利者列表发生变化，重置显示索引和通知状态
+        //   if (allWinnerIds !== lastWinnerCheck) {
+        //     setDisplayedWinnerIndex(0);
+        //     setLastWinnerCheck(allWinnerIds);
+        //     setNotificationShown(false); // 重置通知状态，允许显示新的通知
+        //     console.log('🏆 检测到胜利者变化，重置显示:', winners);
+        //   }
           
-          // 只有在通知还未显示时才设置胜利者消息（避免重复触发计时器）
-          if (!notificationShown) {
-            const currentWinnerIndex = displayedWinnerIndex % winners.length;
-            const currentWinner = winners[currentWinnerIndex];
+        //   // 只有在通知还未显示时才设置胜利者消息（避免重复触发计时器）
+        //   if (!notificationShown) {
+        //     const currentWinnerIndex = displayedWinnerIndex % winners.length;
+        //     const currentWinner = winners[currentWinnerIndex];
             
-            setPlayerWinMessage(currentWinner);
-            setNotificationShown(true); // 标记通知已显示
-            console.log(`🏆 显示胜利者 ${currentWinnerIndex + 1}/${winners.length}:`, currentWinner);
-            console.log(`🏆 胜利详情: 玩家${currentWinner.player_id} ${currentWinner.win_type === 'zimo' ? '自摸' : '点炮胡牌'} ${currentWinner.win_tile ? `${currentWinner.win_tile.value}${suitNames[currentWinner.win_tile.type as keyof typeof suitNames]}` : ''}`);
-          }
-        } else {
-          // 如果没有胜利者了，清除状态
-          if (lastWinnerCheck !== '') {
-            setLastWinnerCheck('');
-            setDisplayedWinnerIndex(0);
-            setPlayerWinMessage(null);
-            setNotificationShown(false);
-            console.log('🏆 胜利者状态已清除');
-          }
-        }
+        //     setPlayerWinMessage(currentWinner);
+        //     setNotificationShown(true); // 标记通知已显示
+        //     console.log(`🏆 显示胜利者 ${currentWinnerIndex + 1}/${winners.length}:`, currentWinner);
+        //     console.log(`🏆 胜利详情: 玩家${currentWinner.player_id} ${currentWinner.win_type === 'zimo' ? '自摸' : '点炮胡牌'} ${currentWinner.win_tile ? `${currentWinner.win_tile.value}${suitNames[currentWinner.win_tile.type as keyof typeof suitNames]}` : ''}`);
+        //   }
+        // } else {
+        //   // 如果没有胜利者了，清除状态
+        //   if (lastWinnerCheck !== '') {
+        //     setLastWinnerCheck('');
+        //     setDisplayedWinnerIndex(0);
+        //     setPlayerWinMessage(null);
+        //     setNotificationShown(false);
+        //     console.log('🏆 胜利者状态已清除');
+        //   }
+        // }
       } catch (error) {
         console.error('❌ 状态同步失败:', error);
       }

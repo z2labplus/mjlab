@@ -56,7 +56,7 @@ class WinValidator:
     
     @staticmethod
     def _check_standard_win_recursive(tiles_array: List[int], start: int) -> bool:
-        """递归检查标准胡牌"""
+        """递归检查标准胡牌 - 修复版本，尝试所有可能组合"""
         # 找到第一个非零牌
         while start < 27 and tiles_array[start] == 0:
             start += 1
@@ -65,14 +65,6 @@ class WinValidator:
             return True  # 所有牌都处理完了
         
         count = tiles_array[start]
-        
-        # 尝试组成对子
-        if count >= 2:
-            tiles_array[start] -= 2
-            if WinValidator._check_standard_win_recursive(tiles_array, start):
-                tiles_array[start] += 2
-                return True
-            tiles_array[start] += 2
         
         # 尝试组成刻子
         if count >= 3:
@@ -83,7 +75,7 @@ class WinValidator:
             tiles_array[start] += 3
         
         # 尝试组成顺子(只能在同花色内)
-        if (start % 9 <= 6 and  # 不能跨花色
+        if (start % 9 <= 6 and start + 2 < 27 and  # 确保同花色且索引有效
             tiles_array[start] >= 1 and
             tiles_array[start + 1] >= 1 and
             tiles_array[start + 2] >= 1):
@@ -162,7 +154,7 @@ class WinValidator:
 
 
 class TingValidator:
-    """听牌验证器 - 专门用于听牌分析"""
+    """听牌验证器 - 使用正确的向听数算法"""
     
     @staticmethod
     def calculate_shanten(tiles: List[Tile], melds: List = None) -> int:
@@ -179,6 +171,10 @@ class TingValidator:
         
         tiles_array = TilesConverter.tiles_to_27_array(tiles)
         
+        # 如果已经胡牌
+        if WinValidator._is_standard_win(tiles_array) or WinValidator._is_seven_pairs(tiles_array):
+            return 0
+        
         # 计算标准胡牌向听数
         standard_shanten = TingValidator._calculate_standard_shanten(tiles_array)
         
@@ -192,108 +188,149 @@ class TingValidator:
         """计算标准胡牌向听数"""
         min_shanten = 99
         
-        # 尝试每个位置作为将牌
+        # 尝试每个位置作为雀头
         for i in range(27):
             if tiles_array[i] >= 2:
-                # 移除将牌
                 tiles_array[i] -= 2
                 
-                # 递归计算剩余部分的向听数
-                shanten = TingValidator._calculate_melds_shanten(tiles_array, 0, 0, 0)
-                min_shanten = min(min_shanten, shanten)
+                # 计算剩余部分能组成多少面子和搭子
+                melds, tatsu = TingValidator._count_melds_and_tatsu(tiles_array[:])
                 
-                # 恢复将牌
+                # 计算向听数：需要4个面子，现有melds个面子和tatsu个搭子
+                need_melds = 4 - melds
+                shanten = max(0, need_melds - tatsu)
+                
+                min_shanten = min(min_shanten, shanten)
                 tiles_array[i] += 2
+        
+        # 无雀头情况
+        melds, tatsu = TingValidator._count_melds_and_tatsu(tiles_array[:])
+        need_melds = 4 - melds
+        shanten = max(1, need_melds - tatsu + 1)  # +1因为缺雀头
+        min_shanten = min(min_shanten, shanten)
         
         return min_shanten
     
     @staticmethod
-    def _calculate_melds_shanten(tiles_array: List[int], start: int, melds: int, tatsu: int) -> int:
-        """递归计算面子向听数"""
-        # 找到第一个非零牌
+    def _count_melds_and_tatsu(tiles_array: List[int]) -> Tuple[int, int]:
+        """统计能组成的面子数和搭子数"""
+        # 尝试所有可能的面子组合，找到最优解
+        best_melds = 0
+        best_tatsu = 0
+        
+        # 使用递归尝试所有可能的面子组合
+        melds, remaining = TingValidator._find_max_melds(tiles_array[:])
+        best_melds = melds
+        
+        # 计算剩余牌的搭子数
+        tatsu = TingValidator._count_tatsu(remaining)
+        best_tatsu = tatsu
+        
+        return best_melds, best_tatsu
+    
+    @staticmethod
+    def _find_max_melds(tiles_array: List[int]) -> Tuple[int, List[int]]:
+        """找到最大面子数，返回(面子数, 剩余牌)"""
+        # 找到第一个非零位置
+        start = 0
         while start < 27 and tiles_array[start] == 0:
             start += 1
         
         if start >= 27:
-            # 需要4个面子
-            need_melds = 4 - melds
-            return max(0, need_melds - tatsu)
+            return 0, tiles_array  # 没有牌了
         
-        count = tiles_array[start]
-        min_shanten = 99
+        best_melds = 0
+        best_remaining = tiles_array[:]
         
-        # 尝试不同的组合方式
-        for shuntsu in range(min(count, (tiles_array[start + 1] if start + 1 < 27 and start % 9 <= 6 else 0),
-                                (tiles_array[start + 2] if start + 2 < 27 and start % 9 <= 6 else 0)) + 1):
-            if start % 9 <= 6 and start + 2 < 27:
-                tiles_array[start] -= shuntsu
-                tiles_array[start + 1] -= shuntsu
-                tiles_array[start + 2] -= shuntsu
-            
-            remaining = tiles_array[start]
-            
-            for kotsu in range(remaining // 3 + 1):
-                tiles_array[start] -= kotsu * 3
-                
-                for tatsu_add in range(min(2, tiles_array[start]) + 1):
-                    if tatsu_add == 2:
-                        # 对子搭子
-                        tiles_array[start] -= 2
-                        shanten = TingValidator._calculate_melds_shanten(
-                            tiles_array, start + 1, melds + shuntsu + kotsu, tatsu + tatsu_add
-                        )
-                        tiles_array[start] += 2
-                    elif tatsu_add == 1:
-                        # 两面搭子或边张搭子
-                        tiles_array[start] -= 1
-                        tatsu_bonus = 0
-                        if start % 9 <= 7 and start + 1 < 27 and tiles_array[start + 1] > 0:
-                            tatsu_bonus = 1
-                        elif start % 9 <= 6 and start + 2 < 27 and tiles_array[start + 2] > 0:
-                            tatsu_bonus = 1
-                        
-                        shanten = TingValidator._calculate_melds_shanten(
-                            tiles_array, start + 1, melds + shuntsu + kotsu, tatsu + tatsu_bonus
-                        )
-                        tiles_array[start] += 1
-                    else:
-                        # 不组成搭子
-                        shanten = TingValidator._calculate_melds_shanten(
-                            tiles_array, start + 1, melds + shuntsu + kotsu, tatsu
-                        )
-                    
-                    min_shanten = min(min_shanten, shanten)
-                
-                tiles_array[start] += kotsu * 3
-            
-            if start % 9 <= 6 and start + 2 < 27:
-                tiles_array[start] += shuntsu
-                tiles_array[start + 1] += shuntsu
-                tiles_array[start + 2] += shuntsu
+        # 尝试组成刻子
+        if tiles_array[start] >= 3:
+            tiles_array[start] -= 3
+            sub_melds, sub_remaining = TingValidator._find_max_melds(tiles_array[:])
+            total_melds = 1 + sub_melds
+            if total_melds > best_melds:
+                best_melds = total_melds
+                best_remaining = sub_remaining[:]
+                best_remaining[start] += 3
+            tiles_array[start] += 3
         
-        return min_shanten
+        # 尝试组成顺子
+        if (start % 9 <= 6 and start + 2 < 27 and
+            tiles_array[start] >= 1 and
+            tiles_array[start + 1] >= 1 and
+            tiles_array[start + 2] >= 1):
+            
+            tiles_array[start] -= 1
+            tiles_array[start + 1] -= 1
+            tiles_array[start + 2] -= 1
+            
+            sub_melds, sub_remaining = TingValidator._find_max_melds(tiles_array[:])
+            total_melds = 1 + sub_melds
+            if total_melds > best_melds:
+                best_melds = total_melds
+                best_remaining = sub_remaining[:]
+                best_remaining[start] += 1
+                best_remaining[start + 1] += 1
+                best_remaining[start + 2] += 1
+            
+            tiles_array[start] += 1
+            tiles_array[start + 1] += 1
+            tiles_array[start + 2] += 1
+        
+        # 跳过当前位置（作为孤张处理）
+        tiles_array[start] -= 1
+        sub_melds, sub_remaining = TingValidator._find_max_melds(tiles_array[:])
+        if sub_melds > best_melds:
+            best_melds = sub_melds
+            best_remaining = sub_remaining[:]
+            best_remaining[start] += 1
+        tiles_array[start] += 1
+        
+        return best_melds, best_remaining
+    
+    @staticmethod
+    def _count_tatsu(tiles_array: List[int]) -> int:
+        """统计搭子数"""
+        tatsu = 0
+        tiles_copy = tiles_array[:]
+        
+        # 统计对子搭子
+        for i in range(27):
+            if tiles_copy[i] >= 2:
+                tatsu += tiles_copy[i] // 2
+                tiles_copy[i] %= 2
+        
+        # 统计两面搭子
+        for i in range(27):
+            if tiles_copy[i] >= 1:
+                if (i % 9 <= 7 and i + 1 < 27 and tiles_copy[i + 1] >= 1):
+                    pairs = min(tiles_copy[i], tiles_copy[i + 1])
+                    tatsu += pairs
+                    tiles_copy[i] -= pairs
+                    tiles_copy[i + 1] -= pairs
+        
+        # 统计嵌张搭子
+        for i in range(27):
+            if tiles_copy[i] >= 1:
+                if (i % 9 <= 6 and i + 2 < 27 and tiles_copy[i + 2] >= 1):
+                    pairs = min(tiles_copy[i], tiles_copy[i + 2])
+                    tatsu += pairs
+                    tiles_copy[i] -= pairs
+                    tiles_copy[i + 2] -= pairs
+        
+        return tatsu
     
     @staticmethod
     def _calculate_pairs_shanten(tiles_array: List[int]) -> int:
         """计算七对向听数"""
         pairs = 0
-        singles = 0
         
         for count in tiles_array:
-            if count >= 2:
-                pairs += count // 2
-                if count % 2 == 1:
-                    singles += 1
-            elif count == 1:
-                singles += 1
+            pairs += count // 2
         
         if pairs >= 7:
             return 0
         
-        need_pairs = 7 - pairs
-        available_singles = singles
-        
-        return max(0, need_pairs - available_singles)
+        return 6 - pairs  # 7对 - 已有对数 - 1(因为0向听)
 
 
 if __name__ == "__main__":

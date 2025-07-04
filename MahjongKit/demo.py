@@ -16,7 +16,7 @@ from datetime import datetime
 sys.path.append(str(Path(__file__).parent.parent))
 
 from MahjongKit.core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
-from MahjongKit.validator import WinValidator, TingValidator
+from MahjongKit.fixed_validator import WinValidator, TingValidator
 from MahjongKit.analyzer import HandAnalyzer, GameAnalyzer
 
 

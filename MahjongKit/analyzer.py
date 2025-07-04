@@ -9,7 +9,83 @@ from collections import Counter, defaultdict
 import copy
 
 from .core import Tile, TilesConverter, SuitType, PlayerState, Meld
-from .validator import WinValidator, TingValidator
+from .fixed_validator import WinValidator, TingValidator
+
+# 临时使用简化算法直到修复validator
+class SimpleShantenCalc:
+    @staticmethod
+    def calculate_shanten(tiles):
+        """简化的向听数计算 - 临时解决方案"""
+        tiles_array = TilesConverter.tiles_to_27_array(tiles)
+        
+        # 检查花色限制
+        suits = set()
+        for tile in tiles:
+            suits.add(tile.suit)
+        if len(suits) > 2:
+            return 99  # 花猪
+        
+        # 简化判断：如果能胡牌返回0，否则返回1
+        if SimpleShantenCalc._can_win(tiles_array):
+            return 0
+        else:
+            return 1
+    
+    @staticmethod
+    def _can_win(tiles_array):
+        """简化的胡牌检查"""
+        # 检查七对
+        pairs = sum(1 for count in tiles_array if count == 2)
+        if pairs == 7:
+            return True
+        
+        # 检查标准胡牌
+        for i in range(27):
+            if tiles_array[i] >= 2:
+                test_array = tiles_array[:]
+                test_array[i] -= 2
+                if SimpleShantenCalc._check_melds(test_array, 0):
+                    return True
+        return False
+    
+    @staticmethod 
+    def _check_melds(tiles_array, start):
+        """简化的面子检查"""
+        while start < 27 and tiles_array[start] == 0:
+            start += 1
+        
+        if start >= 27:
+            return True
+        
+        # 尝试刻子
+        if tiles_array[start] >= 3:
+            tiles_array[start] -= 3
+            if SimpleShantenCalc._check_melds(tiles_array, start):
+                tiles_array[start] += 3
+                return True
+            tiles_array[start] += 3
+        
+        # 尝试顺子
+        if (start % 9 <= 6 and start + 2 < 27 and
+            tiles_array[start] >= 1 and
+            tiles_array[start + 1] >= 1 and
+            tiles_array[start + 2] >= 1):
+            
+            tiles_array[start] -= 1
+            tiles_array[start + 1] -= 1
+            tiles_array[start + 2] -= 1
+            
+            if SimpleShantenCalc._check_melds(tiles_array, start):
+                tiles_array[start] += 1
+                tiles_array[start + 1] += 1
+                tiles_array[start + 2] += 1
+                return True
+            
+            tiles_array[start] += 1
+            tiles_array[start + 1] += 1
+            tiles_array[start + 2] += 1
+        
+        return False
 
 
 class DiscardAnalysis:
@@ -17,11 +93,23 @@ class DiscardAnalysis:
     def __init__(self, discard_tile: Tile, remaining_tiles: List[Tile]):
         self.discard_tile = discard_tile
         self.remaining_tiles = remaining_tiles
+        # 使用修复后的算法
         self.shanten = TingValidator.calculate_shanten(remaining_tiles)
-        self.winning_tiles = WinValidator.get_winning_tiles(remaining_tiles)
+        self.winning_tiles = self._get_winning_tiles() if self.shanten == 0 else []
         self.winning_count = len(self.winning_tiles)
         self.effective_draws = self._calculate_effective_draws()
         self.score = self._calculate_score()
+    
+    def _get_winning_tiles(self):
+        """获取胡牌张"""
+        winning_tiles = []
+        for suit in SuitType:
+            for value in range(1, 10):
+                test_tile = Tile(suit, value)
+                test_tiles = self.remaining_tiles + [test_tile]
+                if WinValidator.is_winning_hand(test_tiles):
+                    winning_tiles.append(test_tile)
+        return winning_tiles
     
     def _calculate_effective_draws(self) -> int:
         """计算有效进张数"""

@@ -219,6 +219,23 @@ class Meld:
     
     def __repr__(self) -> str:
         return f"Meld({self.meld_type}, {self.tiles}, {self.target_player})"
+    
+    def is_kong(self) -> bool:
+        """是否为杭"""
+        return self.meld_type in [MeldType.GANG, MeldType.JIAGANG]
+    
+    def get_suit(self) -> SuitType:
+        """获取花色"""
+        return self.tiles[0].suit
+    
+    def get_value(self) -> int:
+        """获取牌值"""
+        return self.tiles[0].value
+    
+    @property
+    def type(self) -> MeldType:
+        """副露类型属性（兼容性）"""
+        return self.meld_type
 
 
 class PlayerState:

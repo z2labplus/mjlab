@@ -185,6 +185,35 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
 
       if (response.ok) {
         const result = await response.json();
+        
+        // 确保effective_draws和winning_tiles的数据格式正确
+        if (result.effective_draws) {
+          result.effective_draws = result.effective_draws.map((tile: any) => {
+            // 如果是字典格式，转换为正确的Tile对象
+            if (typeof tile === 'object' && tile.type && tile.value) {
+              return {
+                type: tile.type as TileType,
+                value: tile.value
+              };
+            }
+            return tile;
+          });
+        }
+        
+        if (result.winning_tiles) {
+          result.winning_tiles = result.winning_tiles.map((tile: any) => {
+            // 如果是字典格式，转换为正确的Tile对象
+            if (typeof tile === 'object' && tile.type && tile.value) {
+              return {
+                type: tile.type as TileType,
+                value: tile.value
+              };
+            }
+            return tile;
+          });
+        }
+        
+        console.log('Analysis result:', result); // 调试信息
         setAnalysisResult(result);
       } else {
         console.error('分析失败');
@@ -292,16 +321,6 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
       </div>
 
       <div className="relative z-10 container mx-auto p-6">
-        {/* 标题区域 */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
-        >
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🎯 手牌分析
-          </h1>
-        </motion.div>
 
         {/* 主要内容区域 */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -755,19 +774,24 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                             )}
                           </h3>
                           <div className="flex flex-wrap gap-1">
-                            {analysisResult.effective_draws.slice(0, 9).map((tile, index) => (
-                              <motion.div
-                                key={`effective-${index}`}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                              >
-                                <MahjongTile
-                                  tile={tile}
-                                  size="tiny"
-                                  className="opacity-90 hover:scale-110 transition-transform"
-                                />
-                              </motion.div>
+                            {analysisResult.effective_draws.slice(0, 9).map((tile, index) => {
+                              console.log('Effective draw tile:', tile); // 调试信息
+                              return (
+                                <motion.div
+                                  key={`effective-${index}`}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.05 }}
+                                >
+                                  <MahjongTile
+                                    tile={tile}
+                                    size="tiny"
+                                    variant="default"
+                                    className="opacity-90 hover:scale-110 transition-transform"
+                                  />
+                                </motion.div>
+                              );
+                            }
                             ))}
                             {analysisResult.effective_draws.length > 9 && (
                               <div className="flex items-center justify-center w-8 h-10 bg-gray-600/30 rounded text-gray-400 text-xs">

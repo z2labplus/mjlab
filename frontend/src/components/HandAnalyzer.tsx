@@ -30,6 +30,12 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
+  
+  // 拖拽状态管理
+  const [draggedTileIndex, setDraggedTileIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [tileGroups, setTileGroups] = useState<number[]>([]); // 间隔位置数组
+  const [smartGrouping, setSmartGrouping] = useState<boolean>(true);
 
   // 生成所有可能的麻将牌（当前只支持万、条、筒，不包含字牌）
   const getAllTiles = (): Tile[] => {
@@ -271,6 +277,154 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
     return sortTiles(selectedTiles);
   };
 
+  // 拖拽处理函数
+  const handleDragStart = (index: number) => {
+    setDraggedTileIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedTileIndex !== null && dragOverIndex !== null && draggedTileIndex !== dragOverIndex) {
+      const newTiles = [...selectedTiles];
+      const draggedTile = newTiles[draggedTileIndex];
+      
+      // 移除被拖拽的牌
+      newTiles.splice(draggedTileIndex, 1);
+      
+      // 计算新的插入位置
+      const insertIndex = draggedTileIndex < dragOverIndex ? dragOverIndex - 1 : dragOverIndex;
+      
+      // 插入到新位置
+      newTiles.splice(insertIndex, 0, draggedTile);
+      
+      setSelectedTiles(newTiles);
+      updateSmartGroups(newTiles);
+    }
+    
+    setDraggedTileIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    handleDragEnd();
+  };
+
+  // 智能分组算法 - 识别顺子、刻子等
+  const analyzeHandStructure = (tiles: Tile[]) => {
+    const groups: Array<{start: number, end: number, type: 'sequence' | 'triplet' | 'pair' | 'single'}> = [];
+    const processed = new Set<number>();
+    
+    for (let i = 0; i < tiles.length; i++) {
+      if (processed.has(i)) continue;
+      
+      const currentTile = tiles[i];
+      
+      // 检查刻子（3张或4张相同的牌）
+      let sameCount = 1;
+      for (let j = i + 1; j < tiles.length; j++) {
+        if (tiles[j].type === currentTile.type && tiles[j].value === currentTile.value) {
+          sameCount++;
+        }
+      }
+      
+      if (sameCount >= 3) {
+        // 刻子
+        let endIndex = i;
+        for (let j = i + 1; j < tiles.length && sameCount > 1; j++) {
+          if (tiles[j].type === currentTile.type && tiles[j].value === currentTile.value) {
+            processed.add(j);
+            endIndex = j;
+            sameCount--;
+          }
+        }
+        groups.push({start: i, end: endIndex, type: 'triplet'});
+        processed.add(i);
+        continue;
+      }
+      
+      if (sameCount === 2) {
+        // 对子
+        for (let j = i + 1; j < tiles.length; j++) {
+          if (tiles[j].type === currentTile.type && tiles[j].value === currentTile.value) {
+            groups.push({start: i, end: j, type: 'pair'});
+            processed.add(i);
+            processed.add(j);
+            break;
+          }
+        }
+        continue;
+      }
+      
+      // 检查顺子（同花色连续3张牌）
+      if (currentTile.value <= 7) { // 最大只能从7开始组成顺子
+        const nextTile1 = tiles.find((t, idx) => 
+          !processed.has(idx) && t.type === currentTile.type && t.value === currentTile.value + 1
+        );
+        const nextTile2 = tiles.find((t, idx) => 
+          !processed.has(idx) && t.type === currentTile.type && t.value === currentTile.value + 2
+        );
+        
+        if (nextTile1 && nextTile2) {
+          // 找到顺子，标记这三张牌
+          const indices = [i];
+          indices.push(tiles.findIndex((t, idx) => 
+            !processed.has(idx) && t.type === currentTile.type && t.value === currentTile.value + 1
+          ));
+          indices.push(tiles.findIndex((t, idx) => 
+            !processed.has(idx) && t.type === currentTile.type && t.value === currentTile.value + 2
+          ));
+          
+          indices.sort((a, b) => a - b);
+          groups.push({start: indices[0], end: indices[2], type: 'sequence'});
+          indices.forEach(idx => processed.add(idx));
+          continue;
+        }
+      }
+      
+      // 单张牌
+      groups.push({start: i, end: i, type: 'single'});
+      processed.add(i);
+    }
+    
+    return groups;
+  };
+
+  // 更新智能分组
+  const updateSmartGroups = (tiles: Tile[]) => {
+    if (!smartGrouping) return;
+    
+    const groups = analyzeHandStructure(tiles);
+    const groupBoundaries: number[] = [];
+    
+    groups.forEach((group, index) => {
+      if (index < groups.length - 1) {
+        groupBoundaries.push(group.end);
+      }
+    });
+    
+    setTileGroups(groupBoundaries);
+  };
+
+  // 手动切换间隔
+  const toggleGap = (index: number) => {
+    const newGroups = [...tileGroups];
+    const gapIndex = newGroups.indexOf(index);
+    
+    if (gapIndex > -1) {
+      newGroups.splice(gapIndex, 1);
+    } else {
+      newGroups.push(index);
+      newGroups.sort((a, b) => a - b);
+    }
+    
+    setTileGroups(newGroups);
+  };
+
   // 自动排序功能
   const autoSortTiles = () => {
     setSelectedTiles(sortTiles(selectedTiles));
@@ -290,6 +444,13 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
       setAnalysisResult(null);
     }
   };
+
+  // 智能分组自动更新
+  useEffect(() => {
+    if (selectedTiles.length > 0) {
+      updateSmartGroups(selectedTiles);
+    }
+  }, [selectedTiles, smartGrouping]);
 
   // 键盘快捷键支持
   useEffect(() => {
@@ -515,14 +676,24 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                     {selectedTiles.length}/14张
                   </span>
                   {selectedTiles.length > 1 && (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={autoSortTiles}
-                      className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-md hover:bg-yellow-500/30 transition-all duration-200 text-xs flex items-center"
-                    >
-                      🔧 排序
-                    </motion.button>
+                    <div className="flex items-center space-x-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={autoSortTiles}
+                        className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-md hover:bg-yellow-500/30 transition-all duration-200 text-xs flex items-center"
+                      >
+                        🔧 排序
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setTileGroups([])}
+                        className="px-3 py-1 bg-gray-500/20 text-gray-300 rounded-md hover:bg-gray-500/30 transition-all duration-200 text-xs flex items-center"
+                      >
+                        🧹 清除间隔
+                      </motion.button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -537,57 +708,115 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {/* 按花色分组显示 */}
-                    {[TileType.WAN, TileType.TIAO, TileType.TONG].map(tileType => {
-                      const tilesOfType = selectedTiles.filter(tile => tile.type === tileType);
-                      if (tilesOfType.length === 0) return null;
-                      
-                      const sortedTilesOfType = sortTiles(tilesOfType);
-                      const typeNames: Record<TileType, string> = { 
-                        [TileType.WAN]: '万', 
-                        [TileType.TIAO]: '条', 
-                        [TileType.TONG]: '筒',
-                        [TileType.ZI]: '字'
-                      };
-                      
-                      return (
-                        <div key={tileType} className="space-y-1">
-                          <div className="text-xs text-gray-600 flex items-center">
-                            <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
-                            {typeNames[tileType]}子 ({tilesOfType.length}张)
+                  <div className="space-y-4">
+                    {/* 智能分组控制按钮 */}
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-600 flex items-center">
+                        <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
+                        手牌排列 ({selectedTiles.length}张)
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setSmartGrouping(!smartGrouping)}
+                          className={`px-2 py-1 rounded text-xs transition-all duration-200 ${
+                            smartGrouping 
+                              ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30' 
+                              : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
+                          }`}
+                        >
+                          🧠 智能分组
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 拖拽式手牌显示 */}
+                    <div className="flex flex-wrap gap-1 min-h-[80px] p-2 bg-black/10 rounded-lg">
+                      <AnimatePresence>
+                        {selectedTiles.map((tile, index) => (
+                          <div key={`tile-${index}`} className="flex items-center">
+                            {/* 牌面 */}
+                            <motion.div
+                              draggable
+                              onDragStart={() => handleDragStart(index)}
+                              onDragOver={(e) => handleDragOver(e, index)}
+                              onDragEnd={handleDragEnd}
+                              onDrop={handleDrop}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ 
+                                opacity: 1, 
+                                scale: draggedTileIndex === index ? 0.95 : 1,
+                                y: draggedTileIndex === index ? -5 : 0
+                              }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              whileHover={{ scale: 1.05, y: -2 }}
+                              layout
+                              className={`relative ${
+                                draggedTileIndex === index ? 'z-10' : ''
+                              } ${
+                                dragOverIndex === index ? 'ring-2 ring-blue-400' : ''
+                              }`}
+                            >
+                              <MahjongTile
+                                tile={tile}
+                                size="small"
+                                onClick={() => removeTile(index)}
+                                className="cursor-move hover:opacity-70 transition-all duration-200 shadow-md hover:shadow-lg"
+                              />
+                              
+                              {/* 手动间隔控制 */}
+                              {index < selectedTiles.length - 1 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleGap(index);
+                                  }}
+                                  className={`absolute -right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 rounded-full text-xs flex items-center justify-center transition-all duration-200 ${
+                                    tileGroups.includes(index)
+                                      ? 'bg-yellow-500 text-white shadow-md'
+                                      : 'bg-gray-400/50 text-gray-600 hover:bg-gray-400/70'
+                                  }`}
+                                  title={tileGroups.includes(index) ? '移除间隔' : '添加间隔'}
+                                >
+                                  {tileGroups.includes(index) ? '|' : '·'}
+                                </button>
+                              )}
+                            </motion.div>
+                            
+                            {/* 智能间隔显示 */}
+                            {tileGroups.includes(index) && index < selectedTiles.length - 1 && (
+                              <div className="w-3 flex items-center justify-center">
+                                <div className="w-0.5 h-8 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full opacity-60"></div>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            <AnimatePresence>
-                              {sortedTilesOfType.map((tile, typeIndex) => {
-                                const globalIndex = selectedTiles.findIndex((t, i) => 
-                                  t.type === tile.type && t.value === tile.value && 
-                                  selectedTiles.slice(0, i + 1).filter(st => st.type === tile.type && st.value === tile.value).length === 
-                                  sortedTilesOfType.slice(0, typeIndex + 1).filter(st => st.type === tile.type && st.value === tile.value).length
-                                );
-                                return (
-                                  <motion.div
-                                    key={`${tileType}-${typeIndex}-${tile.value}`}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.8 }}
-                                    whileHover={{ scale: 1.05, y: -2 }}
-                                    layout
-                                  >
-                                    <MahjongTile
-                                      tile={tile}
-                                      size="small"
-                                      onClick={() => removeTile(globalIndex)}
-                                      className="cursor-pointer hover:opacity-70 transition-all duration-200 shadow-md hover:shadow-lg"
-                                    />
-                                  </motion.div>
-                                );
-                              })}
-                            </AnimatePresence>
+                        ))}
+                      </AnimatePresence>
+                      
+                      {/* 拖拽提示 */}
+                      <div className="flex-1 flex items-center justify-center text-gray-400 text-xs min-w-[100px]">
+                        {selectedTiles.length > 0 ? (
+                          <div className="text-center">
+                            <div>拖拽排序 • 点击移除</div>
+                            <div className="text-xs opacity-70 mt-1">• 按钮调节间隔</div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* 牌型分析提示 */}
+                    {smartGrouping && selectedTiles.length >= 3 && (
+                      <div className="text-xs text-gray-500 bg-gray-500/10 rounded p-2">
+                        💡 智能分组已识别: {analyzeHandStructure(selectedTiles).map(group => {
+                          const typeMap = {
+                            'sequence': '顺子',
+                            'triplet': '刻子', 
+                            'pair': '对子',
+                            'single': '单张'
+                          };
+                          return typeMap[group.type];
+                        }).join(' • ')}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

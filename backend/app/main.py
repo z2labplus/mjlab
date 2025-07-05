@@ -15,16 +15,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 导入基础模块
+from pydantic import BaseModel
+from typing import List, Dict, Any
+
 # 导入路由
 from .api import mahjong
 from .api.v1 import replay
-from .api import hand_analyzer
 from .websocket import routes as websocket_routes
+
+# 初始化变量
+hand_analyzer_available = False
+
+# 尝试导入手牌分析器
+try:
+    from .api import hand_analyzer
+    hand_analyzer_available = True
+    print("✅ 手牌分析器模块导入成功")
+except ImportError as e:
+    print(f"❌ 手牌分析器模块导入失败: {e}")
+    hand_analyzer_available = False
 
 # 注册HTTP API路由
 app.include_router(mahjong.router, prefix="/api/mahjong", tags=["mahjong"])
 app.include_router(replay.router, prefix="/api/v1/replay", tags=["replay"])
-app.include_router(hand_analyzer.router, prefix="/api/mahjong", tags=["hand-analyzer"])
+
+if hand_analyzer_available:
+    app.include_router(hand_analyzer.router, prefix="/api/mahjong", tags=["hand-analyzer"])
+    print("✅ 手牌分析器路由注册成功")
+else:
+    print("❌ 手牌分析器路由跳过注册")
 
 # 注册WebSocket路由
 app.include_router(websocket_routes.router, prefix="/api", tags=["websocket"])
@@ -52,6 +72,41 @@ async def health_check():
         "status": "healthy",
         "message": "API 服务正常运行"
     }
+
+@app.get("/api/debug/routes")
+async def debug_routes():
+    """调试路由"""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, 'path') and hasattr(route, 'methods'):
+            routes.append({
+                "path": route.path,
+                "methods": list(route.methods) if route.methods else []
+            })
+    return {"routes": routes}
+
+# 备用手牌分析端点（如果主要模块导入失败）
+if not hand_analyzer_available:
+    class FallbackHandAnalysisRequest(BaseModel):
+        tiles: List[str]
+        melds: List[Dict] = []
+    
+    @app.post("/api/mahjong/analyze-hand")
+    async def fallback_analyze_hand(request: FallbackHandAnalysisRequest):
+        """备用手牌分析端点"""
+        return {
+            "is_winning": False,
+            "shanten": 8,
+            "effective_draws": [],
+            "winning_tiles": [],
+            "detailed_analysis": {
+                "current_shanten": 8,
+                "patterns": ["MahjongKit导入失败"],
+                "suggestions": ["❌ 分析功能暂时不可用，请检查后端配置"]
+            }
+        }
+    
+    print("✅ 备用手牌分析端点已注册")
 
 
 @app.on_event("startup")

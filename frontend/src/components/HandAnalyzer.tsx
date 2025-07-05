@@ -31,7 +31,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
 
-  // 生成所有可能的麻将牌
+  // 生成所有可能的麻将牌（当前只支持万、条、筒，不包含字牌）
   const getAllTiles = (): Tile[] => {
     const tiles: Tile[] = [];
     
@@ -49,6 +49,12 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
     for (let i = 1; i <= 9; i++) {
       tiles.push({ type: TileType.TONG, value: i });
     }
+    
+    // TODO: 未来可以添加字牌支持
+    // 字牌：东南西北中发白 (1-7)
+    // for (let i = 1; i <= 7; i++) {
+    //   tiles.push({ type: TileType.ZI, value: i });
+    // }
     
     return tiles;
   };
@@ -200,11 +206,12 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
   // 排序手牌
   const sortTiles = (tiles: Tile[]): Tile[] => {
     return [...tiles].sort((a, b) => {
-      // 首先按花色排序：万 < 条 < 筒
+      // 首先按花色排序：万 < 条 < 筒 < 字
       const typeOrder: Record<TileType, number> = { 
         [TileType.WAN]: 1, 
         [TileType.TIAO]: 2, 
-        [TileType.TONG]: 3 
+        [TileType.TONG]: 3,
+        [TileType.ZI]: 4
       };
       
       const aOrder = typeOrder[a.type] || 999;
@@ -512,7 +519,8 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                       const typeNames: Record<TileType, string> = { 
                         [TileType.WAN]: '万', 
                         [TileType.TIAO]: '条', 
-                        [TileType.TONG]: '筒' 
+                        [TileType.TONG]: '筒',
+                        [TileType.ZI]: '字'
                       };
                       
                       return (

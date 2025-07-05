@@ -760,26 +760,15 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                                 tile={tile}
                                 size="small"
                                 onClick={() => removeTile(index)}
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  if (index < selectedTiles.length - 1) {
+                                    toggleGap(index);
+                                  }
+                                }}
                                 className="cursor-move hover:opacity-70 transition-all duration-200 shadow-md hover:shadow-lg"
                               />
                               
-                              {/* 手动间隔控制 */}
-                              {index < selectedTiles.length - 1 && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleGap(index);
-                                  }}
-                                  className={`absolute -right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 rounded-full text-xs flex items-center justify-center transition-all duration-200 ${
-                                    tileGroups.includes(index)
-                                      ? 'bg-yellow-500 text-white shadow-md'
-                                      : 'bg-gray-400/50 text-gray-600 hover:bg-gray-400/70'
-                                  }`}
-                                  title={tileGroups.includes(index) ? '移除间隔' : '添加间隔'}
-                                >
-                                  {tileGroups.includes(index) ? '|' : '·'}
-                                </button>
-                              )}
                             </motion.div>
                             
                             {/* 智能间隔显示 */}
@@ -796,8 +785,8 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                       <div className="flex-1 flex items-center justify-center text-gray-400 text-xs min-w-[100px]">
                         {selectedTiles.length > 0 ? (
                           <div className="text-center">
-                            <div>拖拽排序 • 点击移除</div>
-                            <div className="text-xs opacity-70 mt-1">• 按钮调节间隔</div>
+                            <div>拖拽排序 • 左键移除</div>
+                            <div className="text-xs opacity-70 mt-1">右键调节间隔</div>
                           </div>
                         ) : null}
                       </div>

@@ -4,6 +4,7 @@ import GameBoard from './components/GameBoard';
 import AnalysisPanel from './components/AnalysisPanel';
 import SettingsPanel from './components/SettingsPanel';
 import ReplaySystem from './components/ReplaySystem';
+import HandAnalyzer from './components/HandAnalyzer';
 import { useWebSocketGameStore } from './stores/webSocketGameStore';
 import { useSettings } from './hooks/useSettings';
 
@@ -38,7 +39,7 @@ function App() {
   } = useWebSocketGameStore();
   const { settings } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'live' | 'replay'>('live');
+  const [currentMode, setCurrentMode] = useState<'live' | 'replay' | 'analyzer'>('live');
   
   // 胜利通知显示状态
   const [showWinNotification, setShowWinNotification] = useState(false);
@@ -217,6 +218,16 @@ function App() {
                 >
                   🎬 牌谱回放
                 </button>
+                <button
+                  onClick={() => setCurrentMode('analyzer')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    currentMode === 'analyzer'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  🧠 手牌分析
+                </button>
               </div>
 
               {currentMode === 'live' && (
@@ -262,7 +273,7 @@ function App() {
               </div>
             </div>
           </motion.div>
-        ) : (
+        ) : currentMode === 'replay' ? (
           /* 回放模式 - 全屏显示 */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -271,6 +282,16 @@ function App() {
             className="w-full h-full"
           >
             <ReplaySystem />
+          </motion.div>
+        ) : (
+          /* 手牌分析模式 - 全屏显示 */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="w-full h-full"
+          >
+            <HandAnalyzer />
           </motion.div>
         )}
       </main>

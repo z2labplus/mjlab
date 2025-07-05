@@ -186,13 +186,25 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
       if (response.ok) {
         const result = await response.json();
         
+        // 将后端返回的type值转换为前端TileType
+        const convertBackendTypeToFrontend = (backendType: string): TileType => {
+          switch (backendType) {
+            case 'm': return TileType.WAN;
+            case 's': return TileType.TIAO;
+            case 'p': return TileType.TONG;
+            default: 
+              console.warn(`未知的后端tile type: ${backendType}`);
+              return TileType.WAN; // 默认值
+          }
+        };
+
         // 确保effective_draws和winning_tiles的数据格式正确
         if (result.effective_draws) {
           result.effective_draws = result.effective_draws.map((tile: any) => {
             console.log('原始 effective_draws tile 数据:', tile);
-            // 确保转换为正确的Tile对象格式
+            // 转换后端格式到前端格式
             const convertedTile = {
-              type: tile.type as TileType,
+              type: convertBackendTypeToFrontend(tile.type),
               value: Number(tile.value)
             };
             console.log('转换后的 effective_draws tile:', convertedTile);
@@ -203,9 +215,9 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
         if (result.winning_tiles) {
           result.winning_tiles = result.winning_tiles.map((tile: any) => {
             console.log('原始 winning_tiles tile 数据:', tile);
-            // 确保转换为正确的Tile对象格式
+            // 转换后端格式到前端格式
             const convertedTile = {
-              type: tile.type as TileType,
+              type: convertBackendTypeToFrontend(tile.type),
               value: Number(tile.value)
             };
             console.log('转换后的 winning_tiles tile:', convertedTile);

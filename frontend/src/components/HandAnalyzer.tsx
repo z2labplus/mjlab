@@ -201,9 +201,17 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
   const sortTiles = (tiles: Tile[]): Tile[] => {
     return [...tiles].sort((a, b) => {
       // 首先按花色排序：万 < 条 < 筒
-      const typeOrder = { [TileType.WAN]: 1, [TileType.TIAO]: 2, [TileType.TONG]: 3 };
-      if (typeOrder[a.type] !== typeOrder[b.type]) {
-        return typeOrder[a.type] - typeOrder[b.type];
+      const typeOrder: Record<TileType, number> = { 
+        [TileType.WAN]: 1, 
+        [TileType.TIAO]: 2, 
+        [TileType.TONG]: 3 
+      };
+      
+      const aOrder = typeOrder[a.type] || 999;
+      const bOrder = typeOrder[b.type] || 999;
+      
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
       }
       // 相同花色按数值排序
       return a.value - b.value;
@@ -355,7 +363,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                             tile={tile}
                             size="small"
                             onClick={() => addTile(tile)}
-                            onContextMenu={(e) => {
+                            onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
                               e.preventDefault();
                               quickAddTile(tile, 4 - getTileCount(tile)); // 右键添加到最大数量
                             }}
@@ -392,7 +400,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                             tile={tile}
                             size="small"
                             onClick={() => addTile(tile)}
-                            onContextMenu={(e) => {
+                            onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
                               e.preventDefault();
                               quickAddTile(tile, 4 - getTileCount(tile));
                             }}
@@ -429,7 +437,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                             tile={tile}
                             size="small"
                             onClick={() => addTile(tile)}
-                            onContextMenu={(e) => {
+                            onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
                               e.preventDefault();
                               quickAddTile(tile, 4 - getTileCount(tile));
                             }}
@@ -501,7 +509,11 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                       if (tilesOfType.length === 0) return null;
                       
                       const sortedTilesOfType = sortTiles(tilesOfType);
-                      const typeNames = { [TileType.WAN]: '万', [TileType.TIAO]: '条', [TileType.TONG]: '筒' };
+                      const typeNames: Record<TileType, string> = { 
+                        [TileType.WAN]: '万', 
+                        [TileType.TIAO]: '条', 
+                        [TileType.TONG]: '筒' 
+                      };
                       
                       return (
                         <div key={tileType} className="space-y-1">

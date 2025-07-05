@@ -14,6 +14,7 @@ interface MahjongTileProps {
   variant?: 'default' | 'selected' | 'selectedHorizontal' | 'recommended' | 'disabled' | 'disabledHorizontal' | 'back';
   onClick?: () => void;
   onDoubleClick?: () => void;
+  onContextMenu?: (event: React.MouseEvent<HTMLDivElement>) => void;
   className?: string;
   showBackground?: boolean;
   animationDelay?: number;
@@ -29,6 +30,7 @@ const MahjongTile: React.FC<MahjongTileProps> = ({
   variant = 'default',
   onClick,
   onDoubleClick,
+  onContextMenu,
   className,
   showBackground = true,
   animationDelay = 0,
@@ -123,12 +125,19 @@ const MahjongTile: React.FC<MahjongTileProps> = ({
       onDoubleClick();
     }
   };
+
+  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (variant !== 'disabled' && variant !== 'back' && onContextMenu) {
+      onContextMenu(event);
+    }
+  };
   
   return (
     <motion.div
       className={baseClasses}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ 

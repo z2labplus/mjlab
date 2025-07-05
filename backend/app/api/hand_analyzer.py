@@ -8,11 +8,43 @@ import sys
 from pathlib import Path
 
 # 添加MahjongKit到Python路径
-sys.path.append(str(Path(__file__).parent.parent.parent.parent / "MahjongKit"))
+import os
+current_file = Path(__file__).resolve()
+backend_dir = current_file.parent.parent.parent  # backend/
+project_root = backend_dir.parent  # mjlab/
+mahjong_kit_path = project_root / "MahjongKit"
 
-from MahjongKit.core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
-from MahjongKit.analyzer import HandAnalyzer as MahjongHandAnalyzer, AdvancedAIStrategy, AdvancedAIDecisionEngine
-from MahjongKit.fixed_validator import WinValidator, TingValidator
+# 打印调试信息
+print(f"当前文件: {current_file}")
+print(f"项目根目录: {project_root}")
+print(f"MahjongKit路径: {mahjong_kit_path}")
+print(f"MahjongKit是否存在: {mahjong_kit_path.exists()}")
+
+if mahjong_kit_path.exists():
+    sys.path.insert(0, str(mahjong_kit_path))
+else:
+    # 尝试其他可能的路径
+    alt_paths = [
+        project_root.parent / "MahjongKit",  # 上级目录
+        Path.cwd() / "MahjongKit",  # 当前工作目录
+        Path(__file__).parent.parent.parent.parent.parent / "MahjongKit"  # 再上一级
+    ]
+    for alt_path in alt_paths:
+        print(f"尝试路径: {alt_path}, 存在: {alt_path.exists()}")
+        if alt_path.exists():
+            mahjong_kit_path = alt_path
+            sys.path.insert(0, str(mahjong_kit_path))
+            break
+
+try:
+    from core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
+    from analyzer import HandAnalyzer as MahjongHandAnalyzer, AdvancedAIStrategy, AdvancedAIDecisionEngine
+    from fixed_validator import WinValidator, TingValidator
+except ImportError as e:
+    print(f"导入MahjongKit模块失败: {e}")
+    print(f"MahjongKit路径: {mahjong_kit_path}")
+    print(f"路径是否存在: {mahjong_kit_path.exists()}")
+    raise
 
 router = APIRouter()
 

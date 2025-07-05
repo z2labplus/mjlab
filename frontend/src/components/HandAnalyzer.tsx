@@ -771,11 +771,9 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                               
                             </motion.div>
                             
-                            {/* 智能间隔显示 */}
+                            {/* 智能间隔显示 - 使用空白间距 */}
                             {tileGroups.includes(index) && index < selectedTiles.length - 1 && (
-                              <div className="w-3 flex items-center justify-center">
-                                <div className="w-0.5 h-8 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full opacity-60"></div>
-                              </div>
+                              <div className="w-4"></div>
                             )}
                           </div>
                         ))}

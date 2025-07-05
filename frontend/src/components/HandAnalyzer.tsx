@@ -165,7 +165,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
         melds: []
       };
 
-      const response = await fetch('/api/mahjong/analyze-hand', {
+      const response = await fetch('http://localhost:8000/api/mahjong/analyze-hand', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

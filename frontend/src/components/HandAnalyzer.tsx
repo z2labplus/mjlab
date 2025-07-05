@@ -283,12 +283,12 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
   }, [selectedTiles]);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 ${className}`}>
+    <div className={`min-h-screen bg-gradient-to-br from-green-50 to-green-100 ${className}`}>
       {/* 背景装饰 */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-20 w-72 h-72 bg-green-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 container mx-auto p-6">
@@ -296,14 +296,11 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-6"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            🎯 智能手牌分析器
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            🎯 手牌分析
           </h1>
-          <p className="text-blue-200 text-lg">
-            基于数学算法的专业麻将分析工具
-          </p>
         </motion.div>
 
         {/* 主要内容区域 */}
@@ -313,11 +310,11 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="xl:col-span-2"
+            className="xl:col-span-1"
           >
-            <div className="bg-white/10 backdrop-filter backdrop-blur-lg rounded-2xl border border-white/20 p-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-                <span className="w-2 h-2 bg-blue-400 rounded-full mr-3"></span>
+            <div className="bg-white/90 backdrop-filter backdrop-blur-lg rounded-2xl border border-gray-200 p-6 shadow-lg">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
                 选择手牌
               </h2>
               
@@ -337,7 +334,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                 </button>
                 <button
                   onClick={() => setPresetHand('one_shanten')}
-                  className="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-all duration-200 text-sm"
+                  className="px-4 py-2 bg-green-500/20 text-blue-300 rounded-lg hover:bg-green-500/30 transition-all duration-200 text-sm"
                 >
                   🎯 一向听示例
                 </button>
@@ -353,9 +350,9 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
               <div className="space-y-4">
                 {/* 万子 */}
                 <div>
-                  <h3 className="text-white mb-2 text-sm font-medium flex items-center">
+                  <h3 className="text-gray-800 mb-2 text-sm font-medium flex items-center">
                     万子
-                    <span className="ml-2 text-xs text-gray-400">左键添加 • 右键添加多张</span>
+                    <span className="ml-2 text-xs text-gray-500">左键添加 • 右键添加多张</span>
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {allTiles.filter(t => t.type === TileType.WAN).map((tile, index) => (
@@ -382,7 +379,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                           />
                         </motion.div>
                         {getTileCount(tile) > 0 && (
-                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                             {getTileCount(tile)}
                           </div>
                         )}
@@ -393,7 +390,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
 
                 {/* 条子 */}
                 <div>
-                  <h3 className="text-white mb-2 text-sm font-medium">条子</h3>
+                  <h3 className="text-gray-800 mb-2 text-sm font-medium">条子</h3>
                   <div className="flex flex-wrap gap-2">
                     {allTiles.filter(t => t.type === TileType.TIAO).map((tile, index) => (
                       <div key={`tiao-${index}`} className="relative">
@@ -419,7 +416,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                           />
                         </motion.div>
                         {getTileCount(tile) > 0 && (
-                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                             {getTileCount(tile)}
                           </div>
                         )}
@@ -430,7 +427,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
 
                 {/* 筒子 */}
                 <div>
-                  <h3 className="text-white mb-2 text-sm font-medium">筒子</h3>
+                  <h3 className="text-gray-800 mb-2 text-sm font-medium">筒子</h3>
                   <div className="flex flex-wrap gap-2">
                     {allTiles.filter(t => t.type === TileType.TONG).map((tile, index) => (
                       <div key={`tong-${index}`} className="relative">
@@ -456,7 +453,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                           />
                         </motion.div>
                         {getTileCount(tile) > 0 && (
-                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                             {getTileCount(tile)}
                           </div>
                         )}
@@ -472,18 +469,18 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
+            className="space-y-6 xl:col-span-2"
           >
             
             {/* 当前手牌 */}
-            <div className="bg-white/10 backdrop-filter backdrop-blur-lg rounded-2xl border border-white/20 p-6">
+            <div className="bg-white/90 backdrop-filter backdrop-blur-lg rounded-2xl border border-gray-200 p-6 shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-white flex items-center">
+                <h2 className="text-xl font-semibold text-gray-800 flex items-center">
                   <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
                   当前手牌
                 </h2>
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm text-blue-200">
+                  <span className="text-sm text-gray-600">
                     {selectedTiles.length}/14张
                   </span>
                   {selectedTiles.length > 1 && (
@@ -525,7 +522,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                       
                       return (
                         <div key={tileType} className="space-y-1">
-                          <div className="text-xs text-gray-300 flex items-center">
+                          <div className="text-xs text-gray-600 flex items-center">
                             <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
                             {typeNames[tileType]}子 ({tilesOfType.length}张)
                           </div>
@@ -572,7 +569,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                   whileTap={{ scale: 0.98 }}
                   onClick={analyzeHand}
                   disabled={selectedTiles.length === 0 || isAnalyzing}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center shadow-lg"
+                  className="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-green-600 hover:to-emerald-600 transition-all duration-200 flex items-center justify-center shadow-lg"
                 >
                   {isAnalyzing ? (
                     <>
@@ -594,7 +591,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={autoSortTiles}
-                      className="py-2 px-3 bg-yellow-500/20 text-yellow-300 rounded-md hover:bg-yellow-500/30 transition-all duration-200 text-sm flex items-center justify-center"
+                      className="py-2 px-3 bg-yellow-500/20 text-yellow-700 rounded-md hover:bg-yellow-500/30 transition-all duration-200 text-sm flex items-center justify-center"
                     >
                       🔧 重新排序
                     </motion.button>
@@ -602,7 +599,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={clearHand}
-                      className="py-2 px-3 bg-red-500/20 text-red-300 rounded-md hover:bg-red-500/30 transition-all duration-200 text-sm flex items-center justify-center"
+                      className="py-2 px-3 bg-red-500/20 text-red-600 rounded-md hover:bg-red-500/30 transition-all duration-200 text-sm flex items-center justify-center"
                     >
                       🗑️ 清空手牌
                     </motion.button>
@@ -618,20 +615,20 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="bg-white/10 backdrop-filter backdrop-blur-lg rounded-2xl border border-white/20 p-6"
+                  className="bg-white/90 backdrop-filter backdrop-blur-lg rounded-2xl border border-gray-200 p-6 shadow-lg"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-white flex items-center">
-                      <span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>
+                    <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                      <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
                       AI分析结果
                     </h2>
                     {/* 状态指示器 */}
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                       analysisResult.is_winning 
-                        ? 'bg-green-500/20 text-green-300' 
+                        ? 'bg-green-500/20 text-green-700' 
                         : analysisResult.shanten <= 1 
-                          ? 'bg-yellow-500/20 text-yellow-300'
-                          : 'bg-blue-500/20 text-blue-300'
+                          ? 'bg-yellow-500/20 text-yellow-700'
+                          : 'bg-green-500/20 text-blue-700'
                     }`}>
                       {analysisResult.is_winning ? '✅ 胡牌' : `${analysisResult.shanten}向听`}
                     </div>
@@ -645,7 +642,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                         ? 'bg-green-500/10 border-green-500/30' 
                         : analysisResult.shanten <= 1 
                           ? 'bg-yellow-500/10 border-yellow-500/30'
-                          : 'bg-blue-500/10 border-blue-500/30'
+                          : 'bg-green-500/10 border-blue-500/30'
                     }`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -653,10 +650,10 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                             {analysisResult.is_winning ? '🏆' : analysisResult.shanten <= 1 ? '🎯' : '📈'}
                           </div>
                           <div>
-                            <div className="text-white font-semibold text-lg">
+                            <div className="text-gray-800 font-semibold text-lg">
                               {analysisResult.is_winning ? '恭喜胡牌！' : `${analysisResult.shanten}向听`}
                             </div>
-                            <div className="text-gray-300 text-sm">
+                            <div className="text-gray-600 text-sm">
                               {analysisResult.is_winning 
                                 ? '手牌已达成胡牌条件' 
                                 : `距离胡牌还需 ${analysisResult.shanten} 步`}
@@ -665,10 +662,10 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                         </div>
                         {!analysisResult.is_winning && (
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-white">
+                            <div className="text-2xl font-bold text-gray-800">
                               {analysisResult.effective_draws?.length || 0}
                             </div>
-                            <div className="text-xs text-gray-300">种进张</div>
+                            <div className="text-xs text-gray-600">种进张</div>
                           </div>
                         )}
                       </div>
@@ -676,14 +673,14 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
 
                     {/* 进张效率指示器 */}
                     {!analysisResult.is_winning && (analysisResult.effective_draws?.length || 0) > 0 && (
-                      <div className="bg-black/20 rounded-lg p-3">
+                      <div className="bg-gray-100/80 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-300">进张效率</span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-sm text-gray-700">进张效率</span>
+                          <span className="text-xs text-gray-600">
                             {analysisResult.effective_draws?.length || 0}/27 种
                           </span>
                         </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div className="w-full bg-gray-300 rounded-full h-2">
                           <div 
                             className={`h-2 rounded-full transition-all duration-500 ${
                               (analysisResult.effective_draws?.length || 0) >= 15 
@@ -697,7 +694,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                             }}
                           ></div>
                         </div>
-                        <div className="mt-1 text-xs text-gray-400">
+                        <div className="mt-1 text-xs text-gray-600">
                           {(analysisResult.effective_draws?.length || 0) >= 15 
                             ? '⚡ 进张丰富，发展良好' 
                             : (analysisResult.effective_draws?.length || 0) >= 8
@@ -712,7 +709,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                   {analysisResult.is_winning ? (
                     <div className="mb-6">
                       <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                        <h3 className="text-green-300 mb-3 text-sm font-medium flex items-center">
+                        <h3 className="text-green-700 mb-3 text-sm font-medium flex items-center">
                           🎊 恭喜！可胡牌张:
                           <span className="ml-2 px-2 py-1 bg-green-500/20 rounded text-xs">
                             {analysisResult.winning_tiles?.length || 0}种
@@ -740,17 +737,17 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                   ) : (
                     analysisResult.effective_draws && analysisResult.effective_draws.length > 0 && (
                       <div className="mb-6">
-                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                          <h3 className="text-blue-300 mb-3 text-sm font-medium flex items-center justify-between">
+                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                          <h3 className="text-emerald-700 mb-3 text-sm font-medium flex items-center justify-between">
                             <span className="flex items-center">
                               ⚡ 有效进张:
-                              <span className="ml-2 px-2 py-1 bg-blue-500/20 rounded text-xs">
+                              <span className="ml-2 px-2 py-1 bg-emerald-500/20 rounded text-xs">
                                 {analysisResult.effective_draws.length}种
                               </span>
                             </span>
                             {analysisResult.effective_draws.length > 9 && (
                               <button 
-                                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors"
                                 onClick={() => {/* TODO: 展开所有进张 */}}
                               >
                                 查看全部
@@ -785,10 +782,10 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
 
                   {/* AI分析建议 */}
                   {analysisResult.detailed_analysis?.suggestions && analysisResult.detailed_analysis.suggestions.length > 0 && (
-                    <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-                      <h3 className="text-purple-300 mb-3 text-sm font-medium flex items-center">
+                    <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-4">
+                      <h3 className="text-teal-700 mb-3 text-sm font-medium flex items-center">
                         🤖 AI智能建议
-                        <span className="ml-2 w-2 h-2 bg-purple-400 rounded-full animate-pulse"></span>
+                        <span className="ml-2 w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
                       </h3>
                       <div className="space-y-2">
                         {analysisResult.detailed_analysis.suggestions.slice(0, 4).map((suggestion, index) => (
@@ -799,10 +796,10 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                             transition={{ delay: index * 0.1 }}
                             className="flex items-start space-x-2 text-sm"
                           >
-                            <div className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="text-xs text-purple-300">{index + 1}</span>
+                            <div className="w-5 h-5 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-xs text-teal-700">{index + 1}</span>
                             </div>
-                            <div className="text-purple-100 leading-relaxed">
+                            <div className="text-gray-700 leading-relaxed">
                               {suggestion}
                             </div>
                           </motion.div>
@@ -811,13 +808,13 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                       
                       {/* 额外分析信息 */}
                       {analysisResult.detailed_analysis.patterns && analysisResult.detailed_analysis.patterns.length > 0 && (
-                        <div className="mt-4 pt-3 border-t border-purple-500/20">
-                          <div className="text-xs text-purple-300 mb-2">🔍 牌型特征:</div>
+                        <div className="mt-4 pt-3 border-t border-teal-500/20">
+                          <div className="text-xs text-teal-700 mb-2">🔍 牌型特征:</div>
                           <div className="flex flex-wrap gap-1">
                             {analysisResult.detailed_analysis.patterns.slice(0, 3).map((pattern, index) => (
                               <span
                                 key={index}
-                                className="px-2 py-1 bg-purple-500/20 text-purple-200 rounded text-xs"
+                                className="px-2 py-1 bg-teal-500/20 text-teal-700 rounded text-xs"
                               >
                                 {pattern}
                               </span>
@@ -841,33 +838,33 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
           className="mt-8 space-y-4"
         >
           {/* 快捷键提示 */}
-          <div className="bg-black/20 rounded-lg p-4 mx-auto max-w-4xl">
-            <h3 className="text-white text-sm font-medium mb-3 text-center">⌨️ 快捷键操作</h3>
+          <div className="bg-white/80 rounded-lg p-4 mx-auto max-w-4xl shadow-md border border-gray-200">
+            <h3 className="text-gray-800 text-sm font-medium mb-3 text-center">⌨️ 快捷键操作</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-              <div className="flex items-center justify-center space-x-2 text-blue-200">
-                <kbd className="px-2 py-1 bg-gray-700 rounded">Enter</kbd>
+              <div className="flex items-center justify-center space-x-2 text-green-700">
+                <kbd className="px-2 py-1 bg-gray-200 rounded shadow-sm">Enter</kbd>
                 <span>分析手牌</span>
               </div>
-              <div className="flex items-center justify-center space-x-2 text-yellow-200">
-                <kbd className="px-2 py-1 bg-gray-700 rounded">S</kbd>
+              <div className="flex items-center justify-center space-x-2 text-yellow-700">
+                <kbd className="px-2 py-1 bg-gray-200 rounded shadow-sm">S</kbd>
                 <span>重新排序</span>
               </div>
-              <div className="flex items-center justify-center space-x-2 text-red-200">
-                <kbd className="px-2 py-1 bg-gray-700 rounded">C</kbd>
+              <div className="flex items-center justify-center space-x-2 text-red-700">
+                <kbd className="px-2 py-1 bg-gray-200 rounded shadow-sm">C</kbd>
                 <span>清空手牌</span>
               </div>
-              <div className="flex items-center justify-center space-x-2 text-purple-200">
-                <kbd className="px-2 py-1 bg-gray-700 rounded">Esc</kbd>
+              <div className="flex items-center justify-center space-x-2 text-purple-700">
+                <kbd className="px-2 py-1 bg-gray-200 rounded shadow-sm">Esc</kbd>
                 <span>关闭结果</span>
               </div>
             </div>
-            <div className="mt-2 text-center text-gray-400 text-xs">
+            <div className="mt-2 text-center text-gray-600 text-xs">
               💡 提示：右键点击牌池中的牌可快速添加多张 • 点击手牌可移除
             </div>
           </div>
           
           {/* 系统信息 */}
-          <div className="text-center text-blue-200/60 text-sm">
+          <div className="text-center text-gray-600/80 text-sm">
             ⚡ 基于27位数组算法 | 🎯 专业级向听数计算 | 🧠 AI智能建议 | 🔧 实时排序优化
           </div>
         </motion.div>

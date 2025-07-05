@@ -791,8 +791,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
                                   />
                                 </motion.div>
                               );
-                            }
-                            ))}
+                            })}
                             {analysisResult.effective_draws.length > 9 && (
                               <div className="flex items-center justify-center w-8 h-10 bg-gray-600/30 rounded text-gray-400 text-xs">
                                 +{analysisResult.effective_draws.length - 9}

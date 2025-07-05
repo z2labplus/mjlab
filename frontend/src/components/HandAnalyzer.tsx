@@ -189,27 +189,27 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
         // 确保effective_draws和winning_tiles的数据格式正确
         if (result.effective_draws) {
           result.effective_draws = result.effective_draws.map((tile: any) => {
-            // 如果是字典格式，转换为正确的Tile对象
-            if (typeof tile === 'object' && tile.type && tile.value) {
-              return {
-                type: tile.type as TileType,
-                value: tile.value
-              };
-            }
-            return tile;
+            console.log('原始 effective_draws tile 数据:', tile);
+            // 确保转换为正确的Tile对象格式
+            const convertedTile = {
+              type: tile.type as TileType,
+              value: Number(tile.value)
+            };
+            console.log('转换后的 effective_draws tile:', convertedTile);
+            return convertedTile;
           });
         }
         
         if (result.winning_tiles) {
           result.winning_tiles = result.winning_tiles.map((tile: any) => {
-            // 如果是字典格式，转换为正确的Tile对象
-            if (typeof tile === 'object' && tile.type && tile.value) {
-              return {
-                type: tile.type as TileType,
-                value: tile.value
-              };
-            }
-            return tile;
+            console.log('原始 winning_tiles tile 数据:', tile);
+            // 确保转换为正确的Tile对象格式
+            const convertedTile = {
+              type: tile.type as TileType,
+              value: Number(tile.value)
+            };
+            console.log('转换后的 winning_tiles tile:', convertedTile);
+            return convertedTile;
           });
         }
         

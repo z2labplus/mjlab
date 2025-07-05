@@ -18,13 +18,13 @@ app.add_middleware(
 # 导入路由
 from .api import mahjong
 from .api.v1 import replay
-from .api import hand_analyzer
+from .api import hand_analyzer_simple
 from .websocket import routes as websocket_routes
 
 # 注册HTTP API路由
 app.include_router(mahjong.router, prefix="/api/mahjong", tags=["mahjong"])
 app.include_router(replay.router, prefix="/api/v1/replay", tags=["replay"])
-app.include_router(hand_analyzer.router, prefix="/api/mahjong", tags=["hand-analyzer"])
+app.include_router(hand_analyzer_simple.router, prefix="/api/mahjong", tags=["hand-analyzer"])
 
 # 注册WebSocket路由
 app.include_router(websocket_routes.router, prefix="/api", tags=["websocket"])

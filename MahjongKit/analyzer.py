@@ -8,8 +8,12 @@ from typing import List, Dict, Any, Tuple, Optional, Set
 from collections import Counter, defaultdict
 import copy
 
-from .core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
-from .fixed_validator import WinValidator, TingValidator
+try:
+    from .core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
+    from .fixed_validator import WinValidator, TingValidator
+except ImportError:
+    from core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
+    from fixed_validator import WinValidator, TingValidator
 
 # 临时使用简化算法直到修复validator
 class SimpleShantenCalc:

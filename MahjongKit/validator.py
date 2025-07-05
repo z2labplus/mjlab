@@ -6,7 +6,10 @@ SichuanMahjongKit Win Validator
 
 from typing import List, Set, Tuple, Optional, Dict, Any
 from collections import Counter
-from .core import Tile, TilesConverter, SuitType, PlayerState, MeldType
+try:
+    from .core import Tile, TilesConverter, SuitType, PlayerState, MeldType
+except ImportError:
+    from core import Tile, TilesConverter, SuitType, PlayerState, MeldType
 
 
 class WinValidator:

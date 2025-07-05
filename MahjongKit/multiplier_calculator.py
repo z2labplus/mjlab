@@ -10,8 +10,12 @@ from typing import Dict, List, Callable, Any, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
 
-from .core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
-from .fixed_validator import WinValidator
+try:
+    from .core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
+    from .fixed_validator import WinValidator
+except ImportError:
+    from core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
+    from fixed_validator import WinValidator
 
 
 @dataclass

@@ -6,9 +6,14 @@ SichuanMahjongKit - 血战到底麻将库
 基于血战到底规则实现
 """
 
-from .core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
-from .validator import WinValidator, TingValidator
-from .analyzer import HandAnalyzer, GameAnalyzer, DiscardAnalysis
+try:
+    from .core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
+    from .validator import WinValidator, TingValidator
+    from .analyzer import HandAnalyzer, GameAnalyzer, DiscardAnalysis
+except ImportError:
+    from core import Tile, TilesConverter, SuitType, PlayerState, Meld, MeldType
+    from validator import WinValidator, TingValidator
+    from analyzer import HandAnalyzer, GameAnalyzer, DiscardAnalysis
 
 __version__ = "1.0.0"
 __author__ = "Claude"

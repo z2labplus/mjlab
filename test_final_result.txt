@@ -1,7 +1,7 @@
 === 血战到底麻将分析 ===
 牌谱文件: D:\codes\mjlab\MahjongKit\..\test_final.json
 游戏类型: xuezhan_daodi
-分析时间: 2025-07-04 02:56:42
+分析时间: 2025-07-04 11:50:56
 
 玩家定缺:
   玩家0: p

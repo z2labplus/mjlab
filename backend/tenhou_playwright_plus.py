@@ -45,28 +45,53 @@ async def get_tenhou_analysis_json(hand_string):
             
             # 访问天凤分析页面
             url = f"https://tenhou.net/2/?q={hand_string}"
-            await page.goto(url)
+            print(f"🌐 访问天凤URL: {url}")
+            
+            try:
+                await page.goto(url, timeout=15000)
+                print("✅ 页面加载成功")
+            except Exception as e:
+                print(f"❌ 页面加载失败: {e}")
+                return []
             
             # 等待页面加载完成
             await page.wait_for_load_state('domcontentloaded')
             await page.wait_for_load_state('networkidle')
             
             # 额外等待JavaScript执行
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
             
-            # 等待分析结果元素出现
-            await page.wait_for_selector('#m2', timeout=10000)
+            # 检查页面标题
+            title = await page.title()
+            print(f"📄 页面标题: {title}")
+            
+            # 尝试等待分析结果元素出现
+            try:
+                await page.wait_for_selector('#m2', timeout=12000)
+                print("✅ 找到 #m2 元素")
+            except Exception as e:
+                print(f"❌ 未找到 #m2 元素: {e}")
+                # 尝试获取整个页面内容进行调试
+                page_content = await page.content()
+                print(f"📝 页面内容长度: {len(page_content)}")
+                if "error" in page_content.lower() or "エラー" in page_content:
+                    print("⚠️ 页面包含错误信息")
+                return []
             
             # 获取分析结果
             m2_element = await page.query_selector('#m2')
             if not m2_element:
+                print("❌ #m2 元素为空")
                 return []
             
             # 获取HTML内容
             analysis_html = await m2_element.inner_html()
+            print(f"📊 分析HTML长度: {len(analysis_html)}")
+            print(f"📊 分析HTML前200字符: {analysis_html[:200]}")
             
             # 解析结果并转换为JSON格式
             result = parse_to_json(analysis_html, hand_string)
+            print(f"✅ 解析结果数量: {len(result)}")
             return result
             
         except Exception as e:
@@ -88,42 +113,75 @@ def parse_to_json(html_content, hand_string):
         list: 结构化的打牌建议列表
     """
     
+    print(f"🔍 开始解析HTML，手牌: {hand_string}")
+    
     # 移除HTML标签
     clean_text = re.sub(r'<[^>]+>', '', html_content)
+    print(f"📝 清理后文本长度: {len(clean_text)}")
+    print(f"📝 清理后文本前500字符: {clean_text[:500]}")
     
     # 查找手牌位置
     hand_pattern = rf'{re.escape(hand_string)}'
     hand_match = re.search(hand_pattern, clean_text)
     
     if not hand_match:
-        return []
+        print(f"❌ 未找到手牌字符串 {hand_string}")
+        # 尝试模糊匹配
+        if hand_string in clean_text:
+            print("✅ 找到手牌字符串（模糊匹配）")
+            start_pos = clean_text.index(hand_string) + len(hand_string)
+        else:
+            print("❌ 完全未找到手牌字符串")
+            return []
+    else:
+        print("✅ 找到手牌字符串")
+        start_pos = hand_match.end()
     
     # 从手牌位置开始提取分析
-    start_pos = hand_match.end()
     analysis_text = clean_text[start_pos:]
+    print(f"📊 分析文本前300字符: {analysis_text[:300]}")
     
-    # 提取打牌建议的模式
-    pattern = r'打(\w+)\s*摸\[([^\]]+?)\s*(\d+)枚\]'
-    matches = re.findall(pattern, analysis_text)
+    # 提取打牌建议的模式 - 尝试多种模式
+    patterns = [
+        r'打(\w+)\s*摸\[([^\]]+?)\s*(\d+)枚\]',  # 原始模式
+        r'打(\w+).*?摸.*?(\d+)枚',  # 简化模式
+        r'(\w+).*?(\d+)枚',  # 最简模式
+    ]
     
     result = []
     
-    for match in matches:
-        discard_tile = match[0]  # 要打出的牌
-        draw_tiles_str = match[1].strip()  # 可以摸到的牌字符串
-        count = match[2]  # 有效牌数
+    for i, pattern in enumerate(patterns):
+        print(f"🔎 尝试模式 {i+1}: {pattern}")
+        matches = re.findall(pattern, analysis_text)
+        print(f"📋 找到 {len(matches)} 个匹配")
         
-        # 解析摸牌列表
-        draw_tiles = parse_draw_tiles(draw_tiles_str)
-        
-        # 构建结果字典
-        suggestion = {
-            "tile": discard_tile,
-            "tiles": draw_tiles,
-            "number": int(count) if count.isdigit() else 0  # 确保number是整数
-        }
-        
-        result.append(suggestion)
+        if matches:
+            for match in matches:
+                if len(match) >= 2:
+                    if len(match) == 3:
+                        discard_tile = match[0]
+                        draw_tiles_str = match[1].strip()
+                        count = match[2]
+                        draw_tiles = parse_draw_tiles(draw_tiles_str)
+                    else:
+                        discard_tile = match[0]
+                        count = match[1]
+                        draw_tiles = []  # 无法解析具体摸牌
+                    
+                    suggestion = {
+                        "tile": discard_tile,
+                        "tiles": draw_tiles,
+                        "number": int(count) if count.isdigit() else 0
+                    }
+                    
+                    result.append(suggestion)
+            
+            if result:
+                print(f"✅ 成功解析 {len(result)} 个建议")
+                break
+    
+    if not result:
+        print("❌ 所有解析模式都失败")
     
     return result
 

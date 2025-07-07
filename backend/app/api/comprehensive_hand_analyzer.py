@@ -226,7 +226,19 @@ async def _analyze_with_tenhou_website(hand_mps: str) -> List[Dict[str, Any]]:
                 # 如果没有有效结果，返回处理过的原始结果
                 return processed_results[:6]
         else:
-            raise Exception("天凤网站返回空结果")
+            # 天凤网站返回空结果时，尝试使用本地模拟作为降级方案
+            print("⚠️ 天凤网站返回空结果，尝试降级到本地模拟")
+            try:
+                from mahjong_analyzer_final import simple_analyze
+                fallback_result = simple_analyze(hand_mps)
+                if isinstance(fallback_result, list) and len(fallback_result) > 0:
+                    print(f"✅ 降级成功，获得 {len(fallback_result)} 个选择")
+                    return fallback_result[:6]
+                else:
+                    raise Exception("降级方案也失败")
+            except Exception as fallback_e:
+                print(f"❌ 降级方案失败: {fallback_e}")
+                raise Exception("天凤网站返回空结果且降级方案失败")
             
     except ImportError:
         raise Exception("天凤Playwright模块不可用")

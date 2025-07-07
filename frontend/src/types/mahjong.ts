@@ -1,4 +1,12 @@
 export enum TileType {
+  WAN = "m",        // 万 - 统一使用m表示
+  TIAO = "s",       // 条 - 统一使用s表示  
+  TONG = "p",       // 筒 - 统一使用p表示
+  ZI = "z"          // 字牌 - 统一使用z表示
+}
+
+// 保持兼容性的旧枚举（用于显示）
+export enum TileTypeDisplay {
   WAN = "wan",      // 万
   TIAO = "tiao",    // 条
   TONG = "tong",    // 筒
@@ -176,6 +184,53 @@ export const tileToString = (tile: Tile): string => {
   }
 };
 
+// 转换为mps格式（用于后端API）
+export const tileToMpsString = (tile: Tile): string => {
+  return `${tile.value}${tile.type}`;
+};
+
+// 从mps格式转换为Tile对象
+export const mpsStringToTile = (mpsStr: string): Tile => {
+  if (mpsStr.length !== 2) {
+    throw new Error(`Invalid mps string: ${mpsStr}`);
+  }
+  
+  const value = parseInt(mpsStr[0]);
+  const type = mpsStr[1] as TileType;
+  
+  if (!Object.values(TileType).includes(type)) {
+    throw new Error(`Invalid tile type: ${type}`);
+  }
+  
+  return { type, value };
+};
+
+// 转换手牌数组为mps字符串
+export const tilesToMpsString = (tiles: Tile[]): string => {
+  const grouped: { [key in TileType]?: number[] } = {};
+  
+  tiles.forEach(tile => {
+    if (!grouped[tile.type]) {
+      grouped[tile.type] = [];
+    }
+    grouped[tile.type]!.push(tile.value);
+  });
+  
+  let result = "";
+  
+  // 按照 m, p, s, z 的顺序
+  const order: TileType[] = [TileType.WAN, TileType.TONG, TileType.TIAO, TileType.ZI];
+  
+  order.forEach(type => {
+    if (grouped[type]) {
+      const sortedValues = grouped[type]!.sort((a, b) => a - b);
+      result += sortedValues.join('') + type;
+    }
+  });
+  
+  return result;
+};
+
 export const tilesEqual = (tile1: Tile, tile2: Tile): boolean => {
   return tile1.type === tile2.type && tile1.value === tile2.value;
 };
@@ -337,4 +392,46 @@ export const calculateRemainingTilesByType = (gameState: GameState): { [key: str
   
   console.log('✅ 最终剩余牌数:', remainingCounts);
   return remainingCounts;
-}; 
+};
+
+// 综合分析相关类型定义
+export interface ComprehensiveAnalysisChoice {
+  tile: string;           // 打牌选择 (如 "1m")
+  number: number;         // 有效牌数
+  tiles: string[];        // 有效牌列表
+}
+
+export interface ComprehensiveAnalysisResult {
+  method: 'tenhou_website' | 'local_simulation' | 'exhaustive';
+  method_name: string;
+  success: boolean;
+  error_message?: string;
+  choices: ComprehensiveAnalysisChoice[];
+  analysis_time: number;
+  timestamp: string;
+}
+
+export interface ComprehensiveAnalysisResponse {
+  hand: string;
+  hand_display: string;
+  results: ComprehensiveAnalysisResult[];
+  comparison?: {
+    success_rate: { [key: string]: boolean };
+    performance: { [key: string]: string };
+    choice_consistency: {
+      match_rate: string;
+      percentage: string;
+    };
+    summary: {
+      total_methods: number;
+      successful_methods: number;
+      fastest_method?: string;
+    };
+  };
+}
+
+export interface ComprehensiveAnalysisRequest {
+  hand: string;
+  methods: Array<'tenhou_website' | 'local_simulation' | 'exhaustive'>;
+  tile_format: 'mps' | 'frontend';
+} 

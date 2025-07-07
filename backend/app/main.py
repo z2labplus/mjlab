@@ -26,6 +26,7 @@ from .websocket import routes as websocket_routes
 
 # 初始化变量
 hand_analyzer_available = False
+comprehensive_analyzer_available = False
 
 # 尝试导入手牌分析器
 try:
@@ -36,6 +37,15 @@ except ImportError as e:
     print(f"❌ 手牌分析器模块导入失败: {e}")
     hand_analyzer_available = False
 
+# 尝试导入综合手牌分析器
+try:
+    from .api import comprehensive_hand_analyzer
+    comprehensive_analyzer_available = True
+    print("✅ 综合手牌分析器模块导入成功")
+except ImportError as e:
+    print(f"❌ 综合手牌分析器模块导入失败: {e}")
+    comprehensive_analyzer_available = False
+
 # 注册HTTP API路由
 app.include_router(mahjong.router, prefix="/api/mahjong", tags=["mahjong"])
 app.include_router(replay.router, prefix="/api/v1/replay", tags=["replay"])
@@ -45,6 +55,12 @@ if hand_analyzer_available:
     print("✅ 手牌分析器路由注册成功")
 else:
     print("❌ 手牌分析器路由跳过注册")
+
+if comprehensive_analyzer_available:
+    app.include_router(comprehensive_hand_analyzer.router, prefix="/api/mahjong", tags=["comprehensive-analyzer"])
+    print("✅ 综合手牌分析器路由注册成功")
+else:
+    print("❌ 综合手牌分析器路由跳过注册")
 
 # 注册WebSocket路由
 app.include_router(websocket_routes.router, prefix="/api", tags=["websocket"])

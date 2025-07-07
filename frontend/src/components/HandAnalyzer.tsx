@@ -175,7 +175,7 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
     setSelectedTiles(sortedTiles);
     
     try {
-      // 转换为后端需要的格式
+      // 转换为后端需要的格式 (现在使用统一的命名规范)
       const handData = {
         tiles: sortedTiles.map(tile => `${tile.value}${tile.type}`),
         melds: []
@@ -192,12 +192,13 @@ const HandAnalyzer: React.FC<HandAnalyzerProps> = ({ className }) => {
       if (response.ok) {
         const result = await response.json();
         
-        // 将后端返回的type值转换为前端TileType
+        // 将后端返回的type值转换为前端TileType (现在命名已统一)
         const convertBackendTypeToFrontend = (backendType: string): TileType => {
           switch (backendType) {
             case 'm': return TileType.WAN;
             case 's': return TileType.TIAO;
             case 'p': return TileType.TONG;
+            case 'z': return TileType.ZI;
             default: 
               console.warn(`未知的后端tile type: ${backendType}`);
               return TileType.WAN; // 默认值

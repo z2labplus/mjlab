@@ -5,6 +5,7 @@ import AnalysisPanel from './components/AnalysisPanel';
 import SettingsPanel from './components/SettingsPanel';
 import ReplaySystem from './components/ReplaySystem';
 import HandAnalyzer from './components/HandAnalyzer';
+import ComprehensiveHandAnalyzer from './components/ComprehensiveHandAnalyzer';
 import { useWebSocketGameStore } from './stores/webSocketGameStore';
 import { useSettings } from './hooks/useSettings';
 
@@ -39,7 +40,7 @@ function App() {
   } = useWebSocketGameStore();
   const { settings } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'live' | 'replay' | 'analyzer'>('live');
+  const [currentMode, setCurrentMode] = useState<'live' | 'replay' | 'analyzer' | 'comprehensive'>('live');
   
   // 胜利通知显示状态
   const [showWinNotification, setShowWinNotification] = useState(false);
@@ -197,10 +198,10 @@ function App() {
               className="flex items-center gap-3"
             >
               {/* 模式切换 */}
-              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setCurrentMode('live')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                     currentMode === 'live'
                       ? 'bg-white text-blue-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-800'
@@ -210,7 +211,7 @@ function App() {
                 </button>
                 <button
                   onClick={() => setCurrentMode('replay')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                     currentMode === 'replay'
                       ? 'bg-white text-blue-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-800'
@@ -220,13 +221,23 @@ function App() {
                 </button>
                 <button
                   onClick={() => setCurrentMode('analyzer')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                     currentMode === 'analyzer'
                       ? 'bg-white text-blue-600 shadow-sm'
                       : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
                   🧠 手牌分析
+                </button>
+                <button
+                  onClick={() => setCurrentMode('comprehensive')}
+                  className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                    currentMode === 'comprehensive'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  🔄 综合分析
                 </button>
               </div>
 
@@ -283,7 +294,7 @@ function App() {
           >
             <ReplaySystem />
           </motion.div>
-        ) : (
+        ) : currentMode === 'analyzer' ? (
           /* 手牌分析模式 - 全屏显示 */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -292,6 +303,16 @@ function App() {
             className="w-full h-full"
           >
             <HandAnalyzer />
+          </motion.div>
+        ) : (
+          /* 综合分析模式 - 全屏显示 */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="w-full h-full"
+          >
+            <ComprehensiveHandAnalyzer />
           </motion.div>
         )}
       </main>

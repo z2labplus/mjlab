@@ -215,8 +215,23 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
         };
         
         setAnalysisHistory(prev => [historyItem, ...prev.slice(0, 4)]); // 保留最近5个分析结果
+        
+        // 显示分析结果摘要
+        const successCount = result.results.filter(r => r.success).length;
+        const totalCount = result.results.length;
+        console.log(`✅ 分析完成: ${successCount}/${totalCount} 种方法成功`);
+        
+        // 如果有失败的方法，显示警告
+        const failedMethods = result.results.filter(r => !r.success);
+        if (failedMethods.length > 0) {
+          failedMethods.forEach(method => {
+            console.warn(`⚠️ ${method.method_name} 分析失败: ${method.error_message}`);
+          });
+        }
       } else {
-        console.error('分析失败');
+        const errorText = await response.text();
+        console.error('分析失败:', errorText);
+        alert(`分析失败: ${errorText}`);
       }
     } catch (error) {
       console.error('分析错误:', error);
@@ -235,6 +250,13 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
     'tenhou_website': '🌐 天凤网站',
     'local_simulation': '🏠 本地模拟天凤',
     'exhaustive': '🔢 穷举算法'
+  };
+
+  // 方法描述映射
+  const methodDescriptions = {
+    'tenhou_website': '真实权威结果，需要网络连接',
+    'local_simulation': '快速本地分析，推荐首选',
+    'exhaustive': '纯数学计算，逻辑透明'
   };
 
   return (
@@ -456,16 +478,33 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
 
                 <div className="space-y-3">
                   {Object.entries(methodNames).map(([method, name]) => (
-                    <label key={method} className="flex items-center cursor-pointer">
+                    <label key={method} className="flex items-start cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedMethods.includes(method as any)}
                         onChange={() => toggleMethod(method as any)}
-                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
                       />
-                      <span className="ml-3 text-sm text-gray-700">{name}</span>
+                      <div className="ml-3 flex-1">
+                        <div className="text-sm text-gray-700 font-medium">{name}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {methodDescriptions[method as keyof typeof methodDescriptions]}
+                        </div>
+                      </div>
                     </label>
                   ))}
+                </div>
+
+                {/* 使用建议 */}
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="text-xs text-gray-700">
+                    <div className="font-medium mb-1">💡 使用建议:</div>
+                    <div className="text-gray-600">
+                      • 首次使用推荐选择"本地模拟天凤"<br />
+                      • 天凤网站分析可能需要较长时间<br />
+                      • 多选可进行方法对比分析
+                    </div>
+                  </div>
                 </div>
 
                 {/* 分析按钮 */}

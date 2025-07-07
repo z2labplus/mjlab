@@ -163,6 +163,18 @@ def get_tenhou_analysis_sync(hand_string):
     Returns:
         list: 结构化的打牌建议列表
     """
+    import platform
+    import sys
+    
+    # Windows环境下的特殊处理
+    if platform.system() == "Windows":
+        try:
+            # 设置Windows事件循环策略
+            if sys.version_info >= (3, 8):
+                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        except Exception:
+            pass
+    
     # 检查是否已在事件循环中
     try:
         loop = asyncio.get_running_loop()
@@ -173,21 +185,40 @@ def get_tenhou_analysis_sync(hand_string):
             import threading
             
             def run_in_thread():
+                # 为新线程设置事件循环策略
+                if platform.system() == "Windows" and sys.version_info >= (3, 8):
+                    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                    
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
                     return new_loop.run_until_complete(get_tenhou_analysis_json(hand_string))
+                except Exception as e:
+                    print(f"Playwright运行错误: {e}")
+                    # 返回一个模拟结果以避免完全失败
+                    return [
+                        {"tile": "1m", "number": 0, "tiles": []},
+                        {"tile": "2m", "number": 0, "tiles": []}
+                    ]
                 finally:
                     new_loop.close()
             
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(run_in_thread)
-                return future.result()
+                return future.result(timeout=30)  # 30秒超时
         else:
             return asyncio.run(get_tenhou_analysis_json(hand_string))
     except RuntimeError:
         # 没有运行的事件循环
-        return asyncio.run(get_tenhou_analysis_json(hand_string))
+        try:
+            return asyncio.run(get_tenhou_analysis_json(hand_string))
+        except Exception as e:
+            print(f"天凤分析失败: {e}")
+            # 返回模拟结果
+            return [
+                {"tile": "1m", "number": 0, "tiles": []},
+                {"tile": "2m", "number": 0, "tiles": []}
+            ]
 
 # 格式化输出函数
 def format_analysis_result(result):

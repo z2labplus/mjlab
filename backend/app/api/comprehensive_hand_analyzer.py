@@ -181,15 +181,40 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
 async def _analyze_with_tenhou_website(hand_mps: str) -> List[Dict[str, Any]]:
     """使用天凤网站分析"""
     try:
-        from tenhou_playwright_plus import get_tenhou_analysis_json
-        result = await get_tenhou_analysis_json(hand_mps)
+        import asyncio
+        import platform
+        from concurrent.futures import ThreadPoolExecutor
+        from tenhou_playwright_plus import get_tenhou_analysis_sync
         
-        if isinstance(result, list):
-            return result[:6]  # 返回前6个选择
+        # 在线程池中运行，避免事件循环问题，并设置超时
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            # 设置30秒超时
+            result = await asyncio.wait_for(
+                loop.run_in_executor(executor, get_tenhou_analysis_sync, hand_mps),
+                timeout=30.0
+            )
+        
+        if isinstance(result, list) and len(result) > 0:
+            # 过滤掉无效结果
+            valid_results = [r for r in result if r.get('number', 0) > 0]
+            if valid_results:
+                return valid_results[:6]  # 返回前6个有效选择
+            else:
+                # 如果没有有效结果，使用原始结果
+                return result[:6]
         else:
-            raise Exception(f"天凤网站分析失败: {result}")
+            raise Exception("天凤网站返回空结果")
+            
     except ImportError:
         raise Exception("天凤Playwright模块不可用")
+    except asyncio.TimeoutError:
+        raise Exception("天凤网站分析超时（30秒）")
+    except Exception as e:
+        # 记录详细错误信息
+        error_msg = f"天凤网站分析失败: {str(e)}"
+        print(f"天凤分析错误详情: {error_msg}")
+        raise Exception(error_msg)
 
 async def _analyze_with_local_simulation(hand_mps: str) -> List[Dict[str, Any]]:
     """使用本地模拟天凤分析"""

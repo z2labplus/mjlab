@@ -181,8 +181,8 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
 async def _analyze_with_tenhou_website(hand_mps: str) -> List[Dict[str, Any]]:
     """使用天凤网站分析"""
     try:
-        from tenhou_playwright_plus import get_tenhou_analysis_sync
-        result = get_tenhou_analysis_sync(hand_mps)
+        from tenhou_playwright_plus import get_tenhou_analysis_json
+        result = await get_tenhou_analysis_json(hand_mps)
         
         if isinstance(result, list):
             return result[:6]  # 返回前6个选择
@@ -194,8 +194,14 @@ async def _analyze_with_tenhou_website(hand_mps: str) -> List[Dict[str, Any]]:
 async def _analyze_with_local_simulation(hand_mps: str) -> List[Dict[str, Any]]:
     """使用本地模拟天凤分析"""
     try:
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
         from mahjong_analyzer_final import simple_analyze
-        result = simple_analyze(hand_mps)
+        
+        # 在线程池中运行同步函数，避免阻塞事件循环
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            result = await loop.run_in_executor(executor, simple_analyze, hand_mps)
         
         if isinstance(result, list):
             return result[:6]  # 返回前6个选择
@@ -207,8 +213,14 @@ async def _analyze_with_local_simulation(hand_mps: str) -> List[Dict[str, Any]]:
 async def _analyze_with_exhaustive(hand_mps: str) -> List[Dict[str, Any]]:
     """使用穷举算法分析"""
     try:
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
         from mahjong_analyzer_exhaustive_fixed import simple_analyze_exhaustive_fixed
-        result = simple_analyze_exhaustive_fixed(hand_mps)
+        
+        # 在线程池中运行同步函数，避免阻塞事件循环
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            result = await loop.run_in_executor(executor, simple_analyze_exhaustive_fixed, hand_mps)
         
         if isinstance(result, list):
             return result[:6]  # 返回前6个选择

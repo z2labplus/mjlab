@@ -121,9 +121,34 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
     });
   };
 
+  // 获取手牌状态
+  const getHandStatus = (tileCount: number) => {
+    if ([3, 6, 9, 12].includes(tileCount)) {
+      return { type: 'xiangong', label: '相公', canAnalyze: false };
+    } else if ([2, 5, 8, 11, 14].includes(tileCount)) {
+      return { type: 'discard', label: '出牌分析', canAnalyze: true };
+    } else if ([1, 4, 7, 10, 13].includes(tileCount)) {
+      return { type: 'win', label: '胡牌分析', canAnalyze: true };
+    } else {
+      return { type: 'invalid', label: '无效手牌', canAnalyze: false };
+    }
+  };
+
+  const currentHandStatus = getHandStatus(selectedTiles.length);
+
   // 综合分析手牌
   const analyzeHand = async () => {
     if (selectedTiles.length === 0 || selectedMethods.length === 0) {
+      return;
+    }
+
+    // 检查相公状态
+    if (!currentHandStatus.canAnalyze) {
+      if (currentHandStatus.type === 'xiangong') {
+        alert('当前手牌数量为相公状态，无法进行分析！\n请调整手牌数量后重试。');
+      } else {
+        alert('手牌数量无效，请重新选择！');
+      }
       return;
     }
 
@@ -136,7 +161,8 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
       const request: ComprehensiveAnalysisRequest = {
         hand: handMps,
         methods: selectedMethods,
-        tile_format: 'mps'
+        tile_format: 'mps',
+        analysis_type: currentHandStatus.type === 'discard' ? 'discard' : 'win'
       };
 
       const response = await fetch('http://localhost:8000/api/mahjong/comprehensive-analyze', {
@@ -149,6 +175,12 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
 
       if (response.ok) {
         const result: ComprehensiveAnalysisResponse = await response.json();
+        
+        // 检查是否是相公状态
+        if (result.analysis_type === 'xiangong') {
+          alert('相公状态：手牌数量不符合规则，无法进行分析！');
+          return;
+        }
         
         // 添加到分析历史
         const historyItem: AnalysisHistory = {
@@ -165,7 +197,8 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
         // 显示分析结果摘要
         const successCount = result.results.filter(r => r.success).length;
         const totalCount = result.results.length;
-        console.log(`✅ 分析完成: ${successCount}/${totalCount} 种方法成功`);
+        const analysisTypeText = result.analysis_type === 'discard' ? '出牌分析' : '胡牌分析';
+        console.log(`✅ ${analysisTypeText}完成: ${successCount}/${totalCount} 种方法成功`);
         
         // 如果有失败的方法，显示警告
         const failedMethods = result.results.filter(r => !r.success);
@@ -345,9 +378,22 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                     <span className="w-2 h-2 bg-blue-400 rounded-full mr-3"></span>
                     当前手牌
                   </h2>
-                  <span className="text-sm text-gray-600">
-                    {selectedTiles.length}/14张
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      {selectedTiles.length}/14张
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      currentHandStatus.type === 'xiangong' 
+                        ? 'bg-red-100 text-red-700' 
+                        : currentHandStatus.type === 'discard'
+                        ? 'bg-blue-100 text-blue-700'
+                        : currentHandStatus.type === 'win'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {currentHandStatus.label}
+                    </span>
+                  </div>
                 </div>
                 
                 <div className="min-h-[100px] bg-black/10 rounded-lg p-4 mb-4">
@@ -380,10 +426,26 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                   )}
                 </div>
 
-                {/* 手牌统计 */}
+                {/* 手牌统计和状态说明 */}
                 {selectedTiles.length > 0 && (
-                  <div className="text-xs text-gray-600 bg-gray-100/80 rounded p-2">
-                    MPS格式: {tilesToMpsString(sortTiles(selectedTiles))}
+                  <div className="space-y-2">
+                    <div className="text-xs text-gray-600 bg-gray-100/80 rounded p-2">
+                      MPS格式: {tilesToMpsString(sortTiles(selectedTiles))}
+                    </div>
+                    <div className={`text-xs p-2 rounded ${
+                      currentHandStatus.type === 'xiangong' 
+                        ? 'bg-red-50 text-red-700 border border-red-200' 
+                        : currentHandStatus.type === 'discard'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : currentHandStatus.type === 'win'
+                        ? 'bg-green-50 text-green-700 border border-green-200'
+                        : 'bg-gray-50 text-gray-600 border border-gray-200'
+                    }`}>
+                      {currentHandStatus.type === 'xiangong' && '⚠️ 相公状态：手牌数量不符合规则，无法进行分析'}
+                      {currentHandStatus.type === 'discard' && '🎯 出牌状态：分析应该出哪张牌'}
+                      {currentHandStatus.type === 'win' && '🀄 听牌状态：分析可以胡哪张牌'}
+                      {currentHandStatus.type === 'invalid' && '❌ 无效状态：请重新调整手牌数量'}
+                    </div>
                   </div>
                 )}
               </div>
@@ -431,17 +493,32 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={analyzeHand}
-                  disabled={selectedTiles.length === 0 || selectedMethods.length === 0 || isAnalyzing}
-                  className="w-full mt-6 py-3 px-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center shadow-lg"
+                  disabled={selectedTiles.length === 0 || selectedMethods.length === 0 || isAnalyzing || !currentHandStatus.canAnalyze}
+                  className={`w-full mt-6 py-3 px-6 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg ${
+                    !currentHandStatus.canAnalyze 
+                      ? 'bg-gradient-to-r from-red-400 to-red-500' 
+                      : currentHandStatus.type === 'discard'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
+                      : 'bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600'
+                  }`}
                 >
                   {isAnalyzing ? (
                     <>
                       <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                       分析中...
                     </>
+                  ) : !currentHandStatus.canAnalyze ? (
+                    <>
+                      ⚠️ {currentHandStatus.type === 'xiangong' ? '相公状态，无法分析' : '手牌数量无效'}
+                    </>
+                  ) : currentHandStatus.type === 'discard' ? (
+                    <>
+                      🎯 分析出牌选择
+                      <span className="ml-2 text-xs opacity-75">({selectedMethods.length}种方法)</span>
+                    </>
                   ) : (
                     <>
-                      🔄 开始综合分析
+                      🀄 分析胡牌机会
                       <span className="ml-2 text-xs opacity-75">({selectedMethods.length}种方法)</span>
                     </>
                   )}

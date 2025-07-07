@@ -25,6 +25,7 @@ class ComprehensiveAnalysisRequest(BaseModel):
     hand: str  # 手牌字符串，例如: "111222333m456p77s"
     methods: List[AnalysisMethod] = ["local_simulation"]  # 要使用的分析方法
     tile_format: Literal["mps", "frontend"] = "mps"  # 输入格式
+    analysis_type: Optional[Literal["discard", "win", "auto"]] = "auto"  # 分析类型
 
 class SingleAnalysisResult(BaseModel):
     """单个分析方法的结果"""
@@ -40,6 +41,8 @@ class ComprehensiveAnalysisResponse(BaseModel):
     """综合分析响应"""
     hand: str
     hand_display: str
+    hand_count: int
+    analysis_type: str  # "discard", "win", "xiangong", "invalid"
     results: List[SingleAnalysisResult]
     comparison: Optional[Dict[str, Any]] = None
 
@@ -108,6 +111,19 @@ def convert_mps_to_display(hand_mps: str) -> str:
     
     return result
 
+def get_analysis_type_by_count(tile_count: int) -> str:
+    """
+    根据手牌数量判断分析类型
+    """
+    if tile_count in [3, 6, 9, 12]:
+        return "xiangong"  # 相公状态
+    elif tile_count in [2, 5, 8, 11, 14]:
+        return "discard"   # 出牌分析
+    elif tile_count in [1, 4, 7, 10, 13]:
+        return "win"       # 胡牌分析
+    else:
+        return "invalid"   # 无效状态
+
 @router.post("/comprehensive-analyze", response_model=ComprehensiveAnalysisResponse)
 async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
     """
@@ -121,6 +137,29 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
             hand_mps = request.hand
         
         hand_display = convert_mps_to_display(hand_mps)
+        
+        # 计算手牌数量
+        tile_count = len([c for c in hand_mps if c.isdigit()])
+        
+        # 判断分析类型
+        analysis_type = get_analysis_type_by_count(tile_count)
+        
+        # 如果是相公状态，直接返回错误
+        if analysis_type == "xiangong":
+            return ComprehensiveAnalysisResponse(
+                hand=hand_mps,
+                hand_display=hand_display,
+                hand_count=tile_count,
+                analysis_type=analysis_type,
+                results=[],
+                comparison=None
+            )
+        
+        # 如果是无效状态，返回错误
+        if analysis_type == "invalid":
+            raise HTTPException(status_code=400, detail=f"无效的手牌数量: {tile_count}张")
+        
+        print(f"🎯 分析类型: {analysis_type}, 手牌数量: {tile_count}张")
         
         results = []
         method_names = {
@@ -176,6 +215,8 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
         return ComprehensiveAnalysisResponse(
             hand=hand_mps,
             hand_display=hand_display,
+            hand_count=tile_count,
+            analysis_type=analysis_type,
             results=results,
             comparison=comparison
         )

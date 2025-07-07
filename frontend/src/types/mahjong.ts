@@ -414,6 +414,8 @@ export interface ComprehensiveAnalysisResult {
 export interface ComprehensiveAnalysisResponse {
   hand: string;
   hand_display: string;
+  hand_count: number;
+  analysis_type: 'discard' | 'win' | 'xiangong' | 'invalid';
   results: ComprehensiveAnalysisResult[];
   comparison?: {
     success_rate: { [key: string]: boolean };
@@ -434,4 +436,5 @@ export interface ComprehensiveAnalysisRequest {
   hand: string;
   methods: Array<'tenhou_website' | 'local_simulation' | 'exhaustive'>;
   tile_format: 'mps' | 'frontend';
+  analysis_type?: 'discard' | 'win' | 'auto';
 } 

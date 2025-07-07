@@ -29,13 +29,13 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ className }) => {
     
     try {
       // 准备分析请求数据
-      const handTiles = myHand.tiles.map(tile => `${tile.value}${tile.type === 'wan' ? '万' : tile.type === 'tiao' ? '条' : '筒'}`);
+      const handTiles = myHand.tiles.map(tile => `${tile.value}${tile.type === TileType.WAN ? '万' : tile.type === TileType.TIAO ? '条' : '筒'}`);
       
       // 收集可见牌（弃牌等）
       const visibleTiles: string[] = [];
       if (gameState.discarded_tiles) {
         gameState.discarded_tiles.forEach(tile => {
-          visibleTiles.push(`${tile.value}${tile.type === 'wan' ? '万' : tile.type === 'tiao' ? '条' : '筒'}`);
+          visibleTiles.push(`${tile.value}${tile.type === TileType.WAN ? '万' : tile.type === TileType.TIAO ? '条' : '筒'}`);
         });
       }
       

@@ -597,9 +597,11 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                               <div>
                                 <div className="text-blue-700 mb-1">性能:</div>
                                 {Object.entries(history.comparison.performance).map(([method, time]) => (
-                                  <div key={method} className="text-gray-600">
-                                    {method}: {time}
-                                  </div>
+                                  <React.Fragment key={method}>
+                                    <div className="text-gray-600">
+                                      {method}: {time}
+                                    </div>
+                                  </React.Fragment>
                                 ))}
                               </div>
                             </div>

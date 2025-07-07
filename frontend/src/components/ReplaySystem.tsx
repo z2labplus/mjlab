@@ -721,13 +721,13 @@ const ReplaySystem: React.FC = () => {
     
     try {
       // 准备分析请求数据
-      const handTiles = hand.map(tile => `${tile.value}${tile.type === 'wan' ? '万' : tile.type === 'tiao' ? '条' : '筒'}`);
+      const handTiles = hand.map(tile => `${tile.value}${tile.type === TileType.WAN ? '万' : tile.type === TileType.TIAO ? '条' : '筒'}`);
       
       // 收集可见牌（弃牌等）
       const visibleTiles: string[] = [];
       if (replayGameState.discarded_tiles) {
         replayGameState.discarded_tiles.forEach(tile => {
-          visibleTiles.push(`${tile.value}${tile.type === 'wan' ? '万' : tile.type === 'tiao' ? '条' : '筒'}`);
+          visibleTiles.push(`${tile.value}${tile.type === TileType.WAN ? '万' : tile.type === TileType.TIAO ? '条' : '筒'}`);
         });
       }
       

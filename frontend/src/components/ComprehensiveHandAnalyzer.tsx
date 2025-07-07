@@ -83,6 +83,11 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
     ).length;
   };
 
+  // 获取剩余可选牌数
+  const getRemainingTileCount = (tile: Tile): number => {
+    return 4 - getTileCount(tile);
+  };
+
   // 排序手牌
   const sortTiles = (tiles: Tile[]): Tile[] => {
     return [...tiles].sort((a, b) => {
@@ -103,66 +108,7 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
     });
   };
 
-  // 预设手牌示例
-  const setPresetHand = (preset: string) => {
-    let tiles: Tile[] = [];
-    
-    switch (preset) {
-      case 'test1':
-        // 测试手牌1：13m24p1578889s232z
-        tiles = [
-          { type: TileType.WAN, value: 1 },
-          { type: TileType.WAN, value: 3 },
-          { type: TileType.TONG, value: 2 },
-          { type: TileType.TONG, value: 4 },
-          { type: TileType.TIAO, value: 1 },
-          { type: TileType.TIAO, value: 5 },
-          { type: TileType.TIAO, value: 7 },
-          { type: TileType.TIAO, value: 8 },
-          { type: TileType.TIAO, value: 8 },
-          { type: TileType.TIAO, value: 8 },
-          { type: TileType.TIAO, value: 9 },
-          { type: TileType.ZI, value: 2 },
-          { type: TileType.ZI, value: 3 },
-          { type: TileType.ZI, value: 2 }
-        ];
-        break;
-      case 'test2':
-        // 测试手牌2：1245589m1244588s
-        const tiles2 = mpsStringToTileArray('1245589m1244588s');
-        tiles = tiles2;
-        break;
-      case 'test3':
-        // 测试手牌3：2233456m4456778s
-        const tiles3 = mpsStringToTileArray('2233456m4456778s');
-        tiles = tiles3;
-        break;
-      default:
-        tiles = [];
-    }
-    
-    setSelectedTiles(tiles);
-  };
 
-  // 将mps字符串转换为Tile数组
-  const mpsStringToTileArray = (mpsString: string): Tile[] => {
-    const tiles: Tile[] = [];
-    let currentNumbers = '';
-    
-    for (const char of mpsString) {
-      if (/\d/.test(char)) {
-        currentNumbers += char;
-      } else if (['m', 'p', 's', 'z'].includes(char)) {
-        for (const numChar of currentNumbers) {
-          const tile = mpsStringToTile(numChar + char);
-          tiles.push(tile);
-        }
-        currentNumbers = '';
-      }
-    }
-    
-    return tiles;
-  };
 
   // 分析方法选择
   const toggleMethod = (method: 'tenhou_website' | 'local_simulation' | 'exhaustive') => {
@@ -283,35 +229,14 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                 选择手牌
               </h2>
               
-              {/* 预设手牌按钮 */}
-              <div className="mb-6 space-y-2">
-                <div className="text-sm text-gray-600 mb-2">测试手牌：</div>
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => setPresetHand('test1')}
-                    className="px-3 py-2 bg-blue-500/20 text-blue-700 rounded-lg hover:bg-blue-500/30 transition-all duration-200 text-sm"
-                  >
-                    📋 测试1 (13m24p1578889s232z)
-                  </button>
-                  <button
-                    onClick={() => setPresetHand('test2')}
-                    className="px-3 py-2 bg-green-500/20 text-green-700 rounded-lg hover:bg-green-500/30 transition-all duration-200 text-sm"
-                  >
-                    📋 测试2 (1245589m1244588s)
-                  </button>
-                  <button
-                    onClick={() => setPresetHand('test3')}
-                    className="px-3 py-2 bg-purple-500/20 text-purple-700 rounded-lg hover:bg-purple-500/30 transition-all duration-200 text-sm"
-                  >
-                    📋 测试3 (2233456m4456778s)
-                  </button>
-                  <button
-                    onClick={clearHand}
-                    className="px-3 py-2 bg-red-500/20 text-red-700 rounded-lg hover:bg-red-500/30 transition-all duration-200 text-sm"
-                  >
-                    🗑️ 清空
-                  </button>
-                </div>
+              {/* 清空手牌按钮 */}
+              <div className="mb-6">
+                <button
+                  onClick={clearHand}
+                  className="w-full px-3 py-2 bg-red-500/20 text-red-700 rounded-lg hover:bg-red-500/30 transition-all duration-200 text-sm"
+                >
+                  🗑️ 清空手牌
+                </button>
               </div>
 
               {/* 牌池 */}
@@ -331,17 +256,15 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                             size="small"
                             onClick={() => addTile(tile)}
                             className={`cursor-pointer transition-all duration-200 ${
-                              getTileCount(tile) >= 4 
+                              getRemainingTileCount(tile) <= 0 
                                 ? 'opacity-30 cursor-not-allowed' 
                                 : 'opacity-80 hover:opacity-100 hover:shadow-lg'
                             }`}
                           />
                         </motion.div>
-                        {getTileCount(tile) > 0 && (
-                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                            {getTileCount(tile)}
-                          </div>
-                        )}
+                        <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                          {getRemainingTileCount(tile)}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -362,17 +285,15 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                             size="small"
                             onClick={() => addTile(tile)}
                             className={`cursor-pointer transition-all duration-200 ${
-                              getTileCount(tile) >= 4 
+                              getRemainingTileCount(tile) <= 0 
                                 ? 'opacity-30 cursor-not-allowed' 
                                 : 'opacity-80 hover:opacity-100 hover:shadow-lg'
                             }`}
                           />
                         </motion.div>
-                        {getTileCount(tile) > 0 && (
-                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                            {getTileCount(tile)}
-                          </div>
-                        )}
+                        <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                          {getRemainingTileCount(tile)}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -393,17 +314,15 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                             size="small"
                             onClick={() => addTile(tile)}
                             className={`cursor-pointer transition-all duration-200 ${
-                              getTileCount(tile) >= 4 
+                              getRemainingTileCount(tile) <= 0 
                                 ? 'opacity-30 cursor-not-allowed' 
                                 : 'opacity-80 hover:opacity-100 hover:shadow-lg'
                             }`}
                           />
                         </motion.div>
-                        {getTileCount(tile) > 0 && (
-                          <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                            {getTileCount(tile)}
-                          </div>
-                        )}
+                        <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                          {getRemainingTileCount(tile)}
+                        </div>
                       </div>
                     ))}
                   </div>

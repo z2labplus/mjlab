@@ -120,7 +120,7 @@ def parse_to_json(html_content, hand_string):
         suggestion = {
             "tile": discard_tile,
             "tiles": draw_tiles,
-            "number": count
+            "number": int(count) if count.isdigit() else 0  # 确保number是整数
         }
         
         result.append(suggestion)

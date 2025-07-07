@@ -133,6 +133,8 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
             start_time = time.time()
             timestamp = time.strftime('%H:%M:%S')
             
+            print(f"🔍 开始分析方法: {method_names[method]} ({method})")
+            
             try:
                 if method == "tenhou_website":
                     result = await _analyze_with_tenhou_website(hand_mps)
@@ -144,6 +146,7 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
                     raise ValueError(f"Unknown analysis method: {method}")
                 
                 analysis_time = time.time() - start_time
+                print(f"✅ {method_names[method]} 分析成功，耗时 {analysis_time:.3f}s，返回 {len(result)} 个选择")
                 
                 results.append(SingleAnalysisResult(
                     method=method,
@@ -156,6 +159,8 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
                 
             except Exception as e:
                 analysis_time = time.time() - start_time
+                print(f"❌ {method_names[method]} 分析失败，耗时 {analysis_time:.3f}s，错误: {str(e)}")
+                
                 results.append(SingleAnalysisResult(
                     method=method,
                     method_name=method_names[method],
@@ -196,13 +201,30 @@ async def _analyze_with_tenhou_website(hand_mps: str) -> List[Dict[str, Any]]:
             )
         
         if isinstance(result, list) and len(result) > 0:
-            # 过滤掉无效结果
-            valid_results = [r for r in result if r.get('number', 0) > 0]
+            # 确保number字段是整数，过滤掉无效结果
+            processed_results = []
+            for r in result:
+                # 安全地处理number字段
+                number = r.get('number', 0)
+                if isinstance(number, str):
+                    try:
+                        number = int(number) if number.isdigit() else 0
+                    except (ValueError, TypeError):
+                        number = 0
+                elif not isinstance(number, int):
+                    number = 0
+                
+                # 更新结果中的number字段
+                r['number'] = number
+                processed_results.append(r)
+            
+            # 过滤掉无效结果（number > 0）
+            valid_results = [r for r in processed_results if r.get('number', 0) > 0]
             if valid_results:
                 return valid_results[:6]  # 返回前6个有效选择
             else:
-                # 如果没有有效结果，使用原始结果
-                return result[:6]
+                # 如果没有有效结果，返回处理过的原始结果
+                return processed_results[:6]
         else:
             raise Exception("天凤网站返回空结果")
             
@@ -229,7 +251,23 @@ async def _analyze_with_local_simulation(hand_mps: str) -> List[Dict[str, Any]]:
             result = await loop.run_in_executor(executor, simple_analyze, hand_mps)
         
         if isinstance(result, list):
-            return result[:6]  # 返回前6个选择
+            # 确保数据类型一致性
+            processed_results = []
+            for r in result:
+                # 确保number字段是整数
+                number = r.get('number', 0)
+                if isinstance(number, str):
+                    try:
+                        number = int(number) if number.isdigit() else 0
+                    except (ValueError, TypeError):
+                        number = 0
+                elif not isinstance(number, int):
+                    number = 0
+                
+                r['number'] = number
+                processed_results.append(r)
+            
+            return processed_results[:6]  # 返回前6个选择
         else:
             raise Exception(f"本地模拟分析失败: {result}")
     except ImportError:
@@ -248,7 +286,23 @@ async def _analyze_with_exhaustive(hand_mps: str) -> List[Dict[str, Any]]:
             result = await loop.run_in_executor(executor, simple_analyze_exhaustive_fixed, hand_mps)
         
         if isinstance(result, list):
-            return result[:6]  # 返回前6个选择
+            # 确保数据类型一致性
+            processed_results = []
+            for r in result:
+                # 确保number字段是整数
+                number = r.get('number', 0)
+                if isinstance(number, str):
+                    try:
+                        number = int(number) if number.isdigit() else 0
+                    except (ValueError, TypeError):
+                        number = 0
+                elif not isinstance(number, int):
+                    number = 0
+                
+                r['number'] = number
+                processed_results.append(r)
+            
+            return processed_results[:6]  # 返回前6个选择
         else:
             raise Exception(f"穷举算法分析失败: {result}")
     except ImportError:

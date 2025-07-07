@@ -217,6 +217,50 @@ class MahjongAnalyzer:
         
         return False
 
+    def _analyze_13_tiles(self, hand_tiles, current_shanten, hand_string):
+        """
+        分析13张牌的情况（听牌状态）
+        直接分析可以摸什么牌来减少向听数
+        """
+        from collections import Counter
+        hand_counts = Counter(hand_tiles)
+        
+        # 找出所有能减少向听数的牌
+        candidate_tiles = []
+        
+        for idx in range(34):
+            test_tile = self.index_to_tile(idx)
+            available = 4 - hand_counts.get(test_tile, 0)
+            
+            if available > 0:
+                test_hand = hand_tiles + [test_tile]
+                new_shanten = self.calculate_shanten(test_hand)
+                
+                if new_shanten < current_shanten:
+                    # 计算稳定性得分
+                    stability = self.calculate_tenhou_stability_score(test_hand)
+                    
+                    # 基础稳定性检查
+                    if stability >= self.STABILITY_THRESHOLD:
+                        candidate_tiles.append((test_tile, available))
+        
+        if candidate_tiles:
+            final_tiles = [tile for tile, _ in candidate_tiles]
+            total_count = sum(count for _, count in candidate_tiles)
+            
+            # 对于13张牌，返回可以摸的牌作为单一选择
+            return [{
+                "tile": "摸牌",  # 表示这是摸牌分析
+                "tiles": final_tiles,
+                "number": str(total_count)
+            }]
+        else:
+            return [{
+                "tile": "摸牌",
+                "tiles": [],
+                "number": "0"
+            }]
+
     def analyze_hand(self, hand_string):
         """
         分析手牌，返回与天凤格式相同的结果
@@ -224,12 +268,17 @@ class MahjongAnalyzer:
         """
         hand_tiles = self.parse_hand(hand_string)
         
-        if len(hand_tiles) != 14:
-            return f"错误：手牌应该是14张，当前是{len(hand_tiles)}张"
+        if len(hand_tiles) < 1 or len(hand_tiles) > 14:
+            return f"错误：手牌应该是1-14张，当前是{len(hand_tiles)}张"
         
         results = []
         current_shanten = self.calculate_shanten(hand_tiles)
         
+        # 处理13张牌的情况（听牌状态）
+        if len(hand_tiles) == 13:
+            return self._analyze_13_tiles(hand_tiles, current_shanten, hand_string)
+        
+        # 处理14张牌的情况（需要打牌）
         # 枚举弃牌
         unique_tiles = list(set(hand_tiles))
         

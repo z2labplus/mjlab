@@ -191,6 +191,45 @@ class FixedExhaustiveMahjongAnalyzer:
         
         return shanten
     
+    def _analyze_13_tiles_exhaustive(self, hand_tiles, current_shanten):
+        """
+        穷举版分析13张牌的情况（听牌状态）
+        直接分析可以摸什么牌来减少向听数
+        """
+        hand_counts = Counter(hand_tiles)
+        
+        # 穷举所有可能的进张牌
+        effective_tiles = []
+        total_effective_count = 0
+        
+        # 遍历所有34种牌
+        for tile_idx in range(34):
+            test_tile = self.index_to_tile(tile_idx)
+            available_count = 4 - hand_counts.get(test_tile, 0)
+            
+            if available_count > 0:
+                # 加入这张牌后的手牌
+                test_hand = hand_tiles + [test_tile]
+                test_shanten = self.calculate_shanten(test_hand)
+                
+                # 如果能减少向听数，则为有效牌
+                if test_shanten < current_shanten:
+                    effective_tiles.append(test_tile)
+                    total_effective_count += available_count
+        
+        if effective_tiles:
+            return [{
+                "tile": "摸牌",  # 表示这是摸牌分析
+                "tiles": effective_tiles,
+                "number": str(total_effective_count)
+            }]
+        else:
+            return [{
+                "tile": "摸牌",
+                "tiles": [],
+                "number": "0"
+            }]
+    
     def analyze_hand_exhaustive_fixed(self, hand_string):
         """
         修正的穷举版分析手牌
@@ -198,12 +237,17 @@ class FixedExhaustiveMahjongAnalyzer:
         """
         hand_tiles = self.parse_hand(hand_string)
         
-        if len(hand_tiles) != 14:
-            return f"错误：手牌应该是14张，当前是{len(hand_tiles)}张"
+        if len(hand_tiles) < 1 or len(hand_tiles) > 14:
+            return f"错误：手牌应该是1-14张，当前是{len(hand_tiles)}张"
         
         results = []
         current_shanten = self.calculate_shanten(hand_tiles)
         
+        # 处理13张牌的情况（听牌状态）
+        if len(hand_tiles) == 13:
+            return self._analyze_13_tiles_exhaustive(hand_tiles, current_shanten)
+        
+        # 处理14张牌的情况（需要打牌）
         # 获取手牌中所有不同的牌
         unique_tiles = list(set(hand_tiles))
         

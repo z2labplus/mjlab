@@ -415,7 +415,7 @@ export interface ComprehensiveAnalysisResponse {
   hand: string;
   hand_display: string;
   hand_count: number;
-  analysis_type: 'discard' | 'win' | 'xiangong' | 'invalid';
+  analysis_type: 'discard' | 'win' | 'winning' | 'xiangong' | 'invalid';
   results: ComprehensiveAnalysisResult[];
   comparison?: {
     success_rate: { [key: string]: boolean };

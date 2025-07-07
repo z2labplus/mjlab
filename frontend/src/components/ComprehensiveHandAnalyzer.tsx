@@ -126,7 +126,7 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
     if ([3, 6, 9, 12].includes(tileCount)) {
       return { type: 'xiangong', label: '相公', canAnalyze: false };
     } else if ([2, 5, 8, 11, 14].includes(tileCount)) {
-      return { type: 'discard', label: '出牌分析', canAnalyze: true };
+      return { type: 'discard_or_win', label: '检查胡牌/出牌', canAnalyze: true };
     } else if ([1, 4, 7, 10, 13].includes(tileCount)) {
       return { type: 'win', label: '胡牌分析', canAnalyze: true };
     } else {
@@ -162,7 +162,7 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
         hand: handMps,
         methods: selectedMethods,
         tile_format: 'mps',
-        analysis_type: currentHandStatus.type === 'discard' ? 'discard' : 'win'
+        analysis_type: currentHandStatus.type === 'discard_or_win' ? 'auto' : currentHandStatus.type === 'win' ? 'win' : 'auto'
       };
 
       const response = await fetch('http://localhost:8000/api/mahjong/comprehensive-analyze', {
@@ -182,6 +182,11 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
           return;
         }
         
+        // 检查是否胡牌
+        if (result.analysis_type === 'winning') {
+          console.log('🎉 检测到胡牌！');
+        }
+        
         // 添加到分析历史
         const historyItem: AnalysisHistory = {
           id: Date.now().toString(),
@@ -197,7 +202,10 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
         // 显示分析结果摘要
         const successCount = result.results.filter(r => r.success).length;
         const totalCount = result.results.length;
-        const analysisTypeText = result.analysis_type === 'discard' ? '出牌分析' : '胡牌分析';
+        const analysisTypeText = result.analysis_type === 'winning' ? '胡牌检测' 
+                               : result.analysis_type === 'discard' ? '出牌分析' 
+                               : result.analysis_type === 'win' ? '胡牌分析'
+                               : '手牌分析';
         console.log(`✅ ${analysisTypeText}完成: ${successCount}/${totalCount} 种方法成功`);
         
         // 如果有失败的方法，显示警告
@@ -385,8 +393,8 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                       currentHandStatus.type === 'xiangong' 
                         ? 'bg-red-100 text-red-700' 
-                        : currentHandStatus.type === 'discard'
-                        ? 'bg-blue-100 text-blue-700'
+                        : currentHandStatus.type === 'discard_or_win'
+                        ? 'bg-purple-100 text-purple-700'
                         : currentHandStatus.type === 'win'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-600'
@@ -435,14 +443,14 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                     <div className={`text-xs p-2 rounded ${
                       currentHandStatus.type === 'xiangong' 
                         ? 'bg-red-50 text-red-700 border border-red-200' 
-                        : currentHandStatus.type === 'discard'
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : currentHandStatus.type === 'discard_or_win'
+                        ? 'bg-purple-50 text-purple-700 border border-purple-200'
                         : currentHandStatus.type === 'win'
                         ? 'bg-green-50 text-green-700 border border-green-200'
                         : 'bg-gray-50 text-gray-600 border border-gray-200'
                     }`}>
                       {currentHandStatus.type === 'xiangong' && '⚠️ 相公状态：手牌数量不符合规则，无法进行分析'}
-                      {currentHandStatus.type === 'discard' && '🎯 出牌状态：分析应该出哪张牌'}
+                      {currentHandStatus.type === 'discard_or_win' && '🔍 检查状态：先检查是否胡牌，如无胡牌则分析出牌'}
                       {currentHandStatus.type === 'win' && '🀄 听牌状态：分析可以胡哪张牌'}
                       {currentHandStatus.type === 'invalid' && '❌ 无效状态：请重新调整手牌数量'}
                     </div>
@@ -497,9 +505,11 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                   className={`w-full mt-6 py-3 px-6 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg ${
                     !currentHandStatus.canAnalyze 
                       ? 'bg-gradient-to-r from-red-400 to-red-500' 
-                      : currentHandStatus.type === 'discard'
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
-                      : 'bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600'
+                      : currentHandStatus.type === 'discard_or_win'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                      : currentHandStatus.type === 'win'
+                      ? 'bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600'
+                      : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
                   }`}
                 >
                   {isAnalyzing ? (
@@ -511,14 +521,19 @@ const ComprehensiveHandAnalyzer: React.FC<ComprehensiveHandAnalyzerProps> = ({ c
                     <>
                       ⚠️ {currentHandStatus.type === 'xiangong' ? '相公状态，无法分析' : '手牌数量无效'}
                     </>
-                  ) : currentHandStatus.type === 'discard' ? (
+                  ) : currentHandStatus.type === 'discard_or_win' ? (
                     <>
-                      🎯 分析出牌选择
+                      🔍 智能分析手牌
+                      <span className="ml-2 text-xs opacity-75">(胡牌检测+出牌分析)</span>
+                    </>
+                  ) : currentHandStatus.type === 'win' ? (
+                    <>
+                      🀄 分析胡牌机会
                       <span className="ml-2 text-xs opacity-75">({selectedMethods.length}种方法)</span>
                     </>
                   ) : (
                     <>
-                      🀄 分析胡牌机会
+                      🎯 开始分析
                       <span className="ml-2 text-xs opacity-75">({selectedMethods.length}种方法)</span>
                     </>
                   )}

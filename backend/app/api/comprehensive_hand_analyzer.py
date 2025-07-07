@@ -118,7 +118,7 @@ def get_analysis_type_by_count(tile_count: int) -> str:
     if tile_count in [3, 6, 9, 12]:
         return "xiangong"  # 相公状态
     elif tile_count in [2, 5, 8, 11, 14]:
-        return "discard"   # 出牌分析
+        return "discard_or_win"   # 先检查胡牌，再考虑出牌分析
     elif tile_count in [1, 4, 7, 10, 13]:
         return "win"       # 胡牌分析
     else:
@@ -162,6 +162,7 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
         print(f"🎯 分析类型: {analysis_type}, 手牌数量: {tile_count}张")
         
         results = []
+        final_analysis_type = analysis_type
         method_names = {
             "tenhou_website": "天凤网站",
             "local_simulation": "本地模拟天凤",
@@ -209,6 +210,19 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
                     timestamp=timestamp
                 ))
         
+        # 检查结果中是否包含胡牌信息，调整最终分析类型
+        if analysis_type == "discard_or_win":
+            has_winning = any(
+                result.success and any(
+                    choice.get('tile') == '胡牌' for choice in result.choices
+                ) for result in results
+            )
+            final_analysis_type = "winning" if has_winning else "discard"
+        else:
+            final_analysis_type = analysis_type
+        
+        print(f"🎯 最终分析类型: {final_analysis_type}")
+        
         # 生成对比分析
         comparison = _generate_comparison(results) if len(results) > 1 else None
         
@@ -216,7 +230,7 @@ async def comprehensive_analyze(request: ComprehensiveAnalysisRequest):
             hand=hand_mps,
             hand_display=hand_display,
             hand_count=tile_count,
-            analysis_type=analysis_type,
+            analysis_type=final_analysis_type,
             results=results,
             comparison=comparison
         )

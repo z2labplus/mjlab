@@ -134,6 +134,105 @@ class MahjongAnalyzer:
         counts = self.to_array34(tiles)
         return self.calculate_standard_shanten(counts)
     
+    def check_winning_hand(self, tiles):
+        """
+        检查是否胡牌
+        返回: (is_winning, winning_patterns)
+        """
+        if len(tiles) % 3 != 2:
+            return False, []
+        
+        counts = self.to_array34(tiles)
+        return self._check_winning_patterns(counts)
+    
+    def _check_winning_patterns(self, counts):
+        """检查胡牌型"""
+        
+        # 检查标准型胡牌
+        if self._check_standard_winning(counts[:]):
+            return True, ["标准型"]
+        
+        # 检查七对子
+        if self._check_seven_pairs(counts):
+            return True, ["七对子"]
+        
+        # 检查国士无双
+        if self._check_thirteen_orphans(counts):
+            return True, ["国士无双"]
+        
+        return False, []
+    
+    def _check_standard_winning(self, counts):
+        """检查标准型胡牌"""
+        def check_win(counts, pos, has_pair):
+            if pos >= 34:
+                return has_pair
+            
+            if counts[pos] == 0:
+                return check_win(counts, pos + 1, has_pair)
+            
+            # 尝试作为雀头
+            if not has_pair and counts[pos] >= 2:
+                counts[pos] -= 2
+                if check_win(counts[:], pos, True):
+                    return True
+                counts[pos] += 2
+            
+            # 尝试作为刻子
+            if counts[pos] >= 3:
+                counts[pos] -= 3
+                if check_win(counts[:], pos, has_pair):
+                    return True
+                counts[pos] += 3
+            
+            # 尝试作为顺子（只对万筒条有效）
+            if pos < 27 and pos % 9 <= 6:
+                if counts[pos] >= 1 and counts[pos + 1] >= 1 and counts[pos + 2] >= 1:
+                    counts[pos] -= 1
+                    counts[pos + 1] -= 1
+                    counts[pos + 2] -= 1
+                    if check_win(counts[:], pos, has_pair):
+                        return True
+                    counts[pos] += 1
+                    counts[pos + 1] += 1
+                    counts[pos + 2] += 1
+            
+            return False
+        
+        return check_win(counts, 0, False)
+    
+    def _check_seven_pairs(self, counts):
+        """检查七对子"""
+        pairs = 0
+        for count in counts:
+            if count == 2:
+                pairs += 1
+            elif count != 0:
+                return False
+        return pairs == 7
+    
+    def _check_thirteen_orphans(self, counts):
+        """检查国士无双"""
+        yaochuhai = [0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33]
+        
+        has_pair = False
+        for idx in yaochuhai:
+            if counts[idx] == 0:
+                return False
+            elif counts[idx] == 2:
+                if has_pair:
+                    return False
+                has_pair = True
+            elif counts[idx] != 1:
+                return False
+        
+        # 检查其他牌是否为0
+        for i in range(34):
+            if i not in yaochuhai and counts[i] != 0:
+                return False
+        
+        return has_pair
+    
     def analyze_hand_structure_tenhou_style(self, tiles):
         """天凤风格的手牌结构分析"""
         counts = self.to_array34(tiles)
@@ -260,6 +359,50 @@ class MahjongAnalyzer:
                 "tiles": [],
                 "number": "0"
             }]
+    
+    def _create_winning_result(self, hand_tiles, winning_patterns):
+        """
+        创建胡牌结果
+        """
+        # 找出可能的胡牌（最后摸到的牌）
+        from collections import Counter
+        tile_counts = Counter(hand_tiles)
+        
+        # 寻找可能的胡牌（最后一张牌）
+        winning_tiles = []
+        
+        # 检查每张牌，如果移除后变成听牌状态，说明这张牌是胡牌
+        unique_tiles = list(set(hand_tiles))
+        for test_tile in unique_tiles:
+            remaining_tiles = hand_tiles[:]
+            remaining_tiles.remove(test_tile)
+            
+            # 如果移除这张牌后是听牌状态（向听数为0），则这张牌是胡牌
+            remaining_shanten = self.calculate_shanten(remaining_tiles)
+            if remaining_shanten == 0:
+                winning_tiles.append(test_tile)
+        
+        # 如果找不到具体胡牌，但确实是胡牌，可能是特殊牌型
+        if not winning_tiles and winning_patterns:
+            # 对于标准型，找出可能的胡牌
+            if "标准型" in winning_patterns:
+                # 找出对子，对子中的任意一张都可能是胡牌
+                from collections import Counter
+                tile_counts = Counter(hand_tiles)
+                for tile, count in tile_counts.items():
+                    if count == 2:
+                        winning_tiles.append(tile)
+            
+            # 如果还是找不到，设为所有牌
+            if not winning_tiles:
+                winning_tiles = unique_tiles[:3]  # 返回前几张作为示例
+        
+        return [{
+            "tile": "胡牌",
+            "tiles": winning_tiles,
+            "number": str(len(winning_tiles)),
+            "patterns": winning_patterns
+        }]
 
     def analyze_hand(self, hand_string):
         """
@@ -278,7 +421,13 @@ class MahjongAnalyzer:
         if len(hand_tiles) == 13:
             return self._analyze_13_tiles(hand_tiles, current_shanten, hand_string)
         
-        # 处理14张牌的情况（需要打牌）
+        # 处理14张牌的情况（先检查胡牌，再考虑打牌）
+        if len(hand_tiles) in [2, 5, 8, 11, 14]:
+            is_winning, winning_patterns = self.check_winning_hand(hand_tiles)
+            if is_winning:
+                return self._create_winning_result(hand_tiles, winning_patterns)
+        
+        # 如果没有胡牌，继续分析出牌
         # 枚举弃牌
         unique_tiles = list(set(hand_tiles))
         

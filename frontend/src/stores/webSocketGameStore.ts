@@ -14,6 +14,7 @@ import {
   Winner
 } from '../types/mahjong';
 import { WebSocketClient, ConnectionStatus } from '../services/WebSocketClient';
+import { normalizeGameState } from '../utils/tileNormalizers';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { MahjongAPI } from '../utils/api';
 
@@ -242,8 +243,9 @@ export const useWebSocketGameStore = create<WebSocketGameStore>()(
     
     // 游戏状态管理
     setGameState: (gameState) => {
+      const normalized = normalizeGameState(gameState as any);
       set({ 
-        gameState,
+        gameState: normalized,
         lastSyncTime: new Date()
       });
     },
@@ -275,7 +277,8 @@ export const useWebSocketGameStore = create<WebSocketGameStore>()(
         const result = await response.json();
         
         if (result.success && result.game_state) {
-          const newState = result.game_state;
+          const newStateRaw = result.game_state;
+          const newState = normalizeGameState(newStateRaw);
           const newPlayer0TileCount = newState.player_hands['0']?.tiles?.length || 0;
           
           // 🎯 检测玩家0是否摸牌（手牌数量增加）

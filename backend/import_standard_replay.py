@@ -139,7 +139,7 @@ async def auto_import_default():
     print("=" * 50)
     
     # 默认文件路径
-    default_file = "/root/claude/hmjai/model/first_hand/sample_mahjong_game_final.json"
+    default_file = "/Users/mac-13/Desktop/codes/mjlab/model/first_hand/sample_mahjong_game_final.json"
     default_game_id = "standard_format_default"
     
     success = await import_standard_replay(default_file, default_game_id)

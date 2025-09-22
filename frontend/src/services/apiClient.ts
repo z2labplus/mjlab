@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { GameState } from '../types/mahjong';
+import { normalizeGameState, convertGameStateToBackend } from '../utils/tileNormalizers';
 
 // 从环境变量获取API地址，默认使用本地开发地址
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/mahjong';
@@ -73,7 +74,8 @@ export class MahjongApiClient {
         if (!gameState.game_id) {
           console.warn('后端返回的游戏状态中没有 game_id');
         }
-        return gameState;
+        // 规范化为前端内部使用的 m/s/p/z
+        return normalizeGameState(gameState);
       } else {
         throw new Error(response.data.message || '获取游戏状态失败');
       }
@@ -86,11 +88,14 @@ export class MahjongApiClient {
   // 设置游戏状态
   static async setGameState(gameState: GameState): Promise<GameState> {
     try {
+      // 将前端内部 m/s/p/z 转换为后端期望的 wan/tiao/tong/zi
+      const backendState = convertGameStateToBackend(gameState);
       const response = await apiClient.post<GameStateResponse>('/set-game-state', {
-        game_state: gameState
+        game_state: backendState
       });
       if (response.data.success) {
-        return response.data.game_state;
+        // 返回值也做一次规范化，保证前端一致
+        return normalizeGameState(response.data.game_state);
       } else {
         throw new Error(response.data.message);
       }

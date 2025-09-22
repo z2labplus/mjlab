@@ -24,7 +24,7 @@
   },
   "scripts": {
     "start:windows": "cross-env react-scripts start",
-    "start": "node .\\node_modules\\react-scripts\\bin\\react-scripts.js start",
+    "start": "cross-env react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

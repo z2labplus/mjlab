@@ -17,3 +17,6 @@ Redis-x64-3.2.100/
 **/node_modules/
 __pycache__/
 *.pyc
+.DS_Store
+frontend/public/assets/.DS_Store
+frontend/public/assets/.DS_Store
